@@ -1,0 +1,177 @@
+body {
+  font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+  background: #fff;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  color: #222;
+}
+.login-container, .register-container {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  padding: 32px 28px 24px 28px;
+  border: 1px solid #000;
+  border-radius: 8px;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  z-index: 10;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+input, select, button {
+  width: 100%;
+  margin: 12px 0;
+  padding: 12px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  font-size: 16px;
+  background: #fff;
+  color: #222;
+  transition: border 0.2s;
+  display: block;
+}
+.login-container input[type="text"], .login-container input[type="password"],
+.register-container input[type="text"], .register-container input[type="password"] {
+  width: calc(100% - 20px);
+  margin: 12px 10px;
+  padding: 12px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  font-size: 16px;
+  background: #fff;
+  color: #222;
+  transition: border 0.2s;
+  display: block;
+}
+.login-container input, .login-container select, .login-container button,
+.register-container input, .register-container select, .register-container button {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+input:focus, select:focus {
+  border: 1.5px solid #111;
+  outline: none;
+}
+label {
+  display: block;
+  margin-top: 14px;
+  font-weight: 600;
+  color: #111;
+  letter-spacing: 0.5px;
+}
+button {
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 17px;
+  margin-top: 16px;
+  font-weight: 600;
+  box-shadow: none;
+  transition: background 0.2s, color 0.2s;
+}
+button:hover {
+  background: #333;
+  color: #fff;
+}
+a {
+  color: #111;
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+a:hover {
+  color: #333;
+}
+table {
+  width: 100%;
+  margin: 32px 0 0 0;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 0;
+  box-shadow: none;
+}
+th, td {
+  padding: 14px 10px;
+  border: 1px solid #bbb;
+  text-align: center;
+  font-size: 15px;
+}
+th {
+  background: #111;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+tr:hover td {
+  background: #f5f5f5;
+  transition: background 0.2s;
+}
+h2 {
+  margin-top: 0;
+  color: #111;
+  letter-spacing: 1px;
+  font-size: 2rem;
+  font-weight: 700;
+}
+.logout-link {
+  color: #fff !important;
+  background: #111;
+  padding: 8px 22px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-left: 8px;
+  box-shadow: none;
+  transition: background 0.2s, color 0.2s;
+}
+.logout-link:hover {
+  background: #333;
+  color: #fff !important;
+}
+@media (max-width: 700px) {
+  .login-container, .register-container {
+    padding: 18px 4px;
+    width: 99%;
+  }
+  table, th, td {
+    font-size: 13px;
+  }
+  h2 {
+    font-size: 1.3rem;
+  }
+  .login-container input[type="text"], .login-container input[type="password"],
+  .register-container input[type="text"], .register-container input[type="password"],
+  .login-container button, .register-container button,
+  .login-container select, .register-container select {
+    width: calc(100% - 8px);
+    margin: 12px 4px;
+    padding: 12px;
+  }
+}
+.dashboard-box {
+  width: 100%;
+  max-width: 900px;
+  margin: 40px auto 0 auto;
+  background: none;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+.add-employee-btn {
+  display: block;
+  width: fit-content;
+  padding: 10px 161px;
+
+}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login - Leave Management</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="login-hint" style="display:none; position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:100; min-width:220px; max-width:90vw; padding:13px 28px; background:#fffbe6; color:#b59f00; border:1.5px solid #b59f00; border-radius:8px; font-size:16px; font-weight:600; box-shadow:0 2px 12px #0002; text-align:center; transition:opacity 0.5s; opacity:1;">Wrong email or password.</div>
+  <div class="login-container">
+    <h2>Login</h2>
+    <form action="login.php" method="POST" style="position:relative;">
+      <input type="text" name="email" placeholder="Email" required>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input type="password" name="password" id="password" placeholder="Password" required>
+        <span id="login-hint" style="display:none; min-width:180px; padding:7px 14px; background:#fffbe6; color:#b59f00; border:1px solid #b59f00; border-radius:6px; font-size:14px; font-weight:500; margin-left:4px; transition:opacity 0.5s; opacity:1;">Wrong email or password.</span>
+      </div>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+  <script>
+  window.onload = function() {
+    if (window.location.search.includes('error=1')) {
+      var hint = document.getElementById('login-hint');
+      hint.style.display = '';
+      hint.style.opacity = '1';
+      var pw = document.querySelector('input[type="password"]');
+      if (pw) pw.value = '';
+      setTimeout(function() {
+        hint.style.opacity = '0';
+        setTimeout(function() { hint.style.display = 'none'; }, 500);
+      }, 2500);
+      if (window.history.replaceState) {
+        const url = new URL(window.location);
+        url.searchParams.delete('error');
+        window.history.replaceState({}, document.title, url.pathname + url.search);
+      }
+    }
+  }
+  </script>
+</body>
+</html> 
