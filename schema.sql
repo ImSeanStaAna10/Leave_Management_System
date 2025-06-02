@@ -21,6 +21,11 @@ CREATE TABLE leave_balances (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   leave_type_id INT NOT NULL,
+  year INT NOT NULL,
+  total_days INT NOT NULL,
+  used_days INT DEFAULT 0,
+  remaining_days INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   balance INT NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (leave_type_id) REFERENCES leave_types(id)

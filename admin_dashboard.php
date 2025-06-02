@@ -22,6 +22,41 @@ if (isset($_GET['action']) && isset($_GET['leave_id'])) {
     exit();
 }
 
+// Handle delete leave type action
+if (isset($_GET['action']) && $_GET['action'] === 'delete_leave_type' && isset($_GET['leave_type_id'])) {
+    $leave_type_id = $_GET['leave_type_id'];
+
+    // Add a check to ensure no leaves are associated with this type before deleting
+    $check_leaves_stmt = $conn->prepare('SELECT COUNT(*) FROM leaves WHERE leave_type = ?');
+    $check_leaves_stmt->bind_param('i', $leave_type_id);
+    $check_leaves_stmt->execute();
+    $check_leaves_stmt->bind_result($leaves_count);
+    $check_leaves_stmt->fetch();
+    $check_leaves_stmt->close();
+
+    if ($leaves_count == 0) {
+        // Prepare and execute DELETE query
+        $stmt = $conn->prepare('DELETE FROM leave_types WHERE id = ?');
+        $stmt->bind_param('i', $leave_type_id);
+        if ($stmt->execute()) {
+            // Redirect back to admin dashboard leave types section with success message
+            header('Location: admin_dashboard.php#leave-types');
+            exit();
+        } else {
+            // Handle database error
+            echo 'Error deleting leave type: ' . $stmt->error;
+        }
+        $stmt->close();
+    } else {
+        // Handle case where leaves are associated with the type
+        echo 'Cannot delete leave type as there are leaves associated with it.';
+    }
+    
+    // Redirect back to admin dashboard leave types section
+    header('Location: admin_dashboard.php#leave-types');
+    exit();
+}
+
 // Handle employee management actions
 if (isset($_POST['action'])) {
     if ($_POST['action'] === 'add_employee') {
@@ -757,6 +792,7 @@ $recent_requests = $conn->query('
     }
 
   </style>
+  
 </head>
 <body>
   <div class="dashboard-container">
@@ -764,8 +800,10 @@ $recent_requests = $conn->query('
       <!-- Sidebar content here -->
       <a href="#dashboard" class="active">Dashboard</a>
       <a href="#employee-list">Employee List</a>
-      <a href="#request-list">Request List</a>
+      <a href="#request-list">Leave Requests</a>
       <a href="#leave-types" id="leaveTypesSidebarBtn">Leave Types</a>
+      <a href="calendar_view.php">Calendar View</a>
+       <a href="reports.php">Reports & Analytics</a>
     </div>
     
     <div class="main-content">
@@ -780,15 +818,19 @@ $recent_requests = $conn->query('
         <table style="width: 100%; background: #fff; border-radius: 8px; overflow: hidden; table-layout: fixed;">
           <thead style="background: #1976d2; color: #fff;">
             <tr>
-              <th style="width: 60%;">Leave Type</th>
-              <th style="width: 40%;">Days</th>
+              <th style="width: 30%;">Leave Type</th>
+              <th style="width: 15%;">Days</th>
+              <th style="width: 40%;">Description & Policy</th>
+              <th style="width: 15%;">Actions</th>
             </tr>
           </thead>
           <tbody id="leaveTypesTableBody">
             <?php $leave_types_result = $conn->query('SELECT * FROM leave_types ORDER BY name'); while($lt = $leave_types_result->fetch_assoc()): ?>
-            <tr style="height: 44px;">
+            <tr style="height: auto; min-height: 44px;">
               <td><?= htmlspecialchars($lt['name']) ?></td>
               <td><?= htmlspecialchars($lt['days']) ?></td>
+              <td style="white-space: pre-wrap;"><?= htmlspecialchars($lt['description']) ?></td>
+              <td><a href="?action=delete_leave_type&leave_type_id=<?= $lt['id'] ?>" onclick="return confirm('Are you sure you want to delete this leave type?');" style="color: red; text-decoration: none;">Delete</a></td>
             </tr>
             <?php endwhile; ?>
           </tbody>
@@ -803,6 +845,13 @@ $recent_requests = $conn->query('
               <input type="text" name="leave_type_name" id="leave_type_name" required>
               <label for="leave_type_days">Days:</label>
               <input type="number" name="leave_type_days" id="leave_type_days" min="1" required>
+              
+              <!-- Add Description Field Here -->
+              <label for="leave_type_description">Description & Policy:</label>
+              <textarea name="leave_type_description" id="leave_type_description" required
+                        placeholder="Enter detailed description and policy for this leave type."
+                        style="width: 100%; resize: vertical; min-height: 80px;"></textarea>
+              
               <div style="display:flex; gap:16px; margin-top:18px; justify-content:center;">
                 <button type="submit" style="background:#333; color:#fff; border:none; border-radius:4px; padding:8px 16px; font-weight:600; font-size:1em; cursor:pointer;">Save</button>
                 <button type="button" id="cancelAddLeaveTypeModalBtn" style="background:#333; color:#fff; border:none; border-radius:4px; padding:8px 16px; font-weight:600; font-size:1em; cursor:pointer;">Cancel</button>
@@ -921,42 +970,105 @@ $recent_requests = $conn->query('
       </div>
 
       <div class="dashboard-box" id="request-list">
-    <h2>All Employee Leaves</h2>
-    <div class="tab-btns">
-      <button class="tab-btn active" id="pendingTab" onclick="showTab('pending')">Pending</button>
-      <button class="tab-btn" id="historyTab" onclick="showTab('history')">History</button>
-    </div>
-    <div class="leave-boxes" id="pending-leaves">
-      <?php $leaves = [];
-      $pendingBoxes = '';
-      $historyBoxes = '';
-      while($row = $result->fetch_assoc()):
-        $leaves[$row['user_id']][] = $row;
-        ob_start(); ?>
-        <div class="leave-box" data-userid="<?= $row['user_id'] ?>" data-leaveid="<?= $row['id'] ?>" onclick="showHistory(<?= $row['user_id'] ?>, event)" data-status="<?= $row['status'] ?>">
-          <div style="font-weight:700; font-size:1.1em; margin-bottom:2px;"> <?= htmlspecialchars($row['name']) ?> </div>
-          <div style="font-size:0.98em; margin-bottom:4px;"> <?= htmlspecialchars($row['leave_type']) ?> </div>
-          <div class="status <?= htmlspecialchars($row['status']) ?>"> <?= htmlspecialchars(ucfirst($row['status'])) ?> </div>
-          <div style="font-size:0.95em; margin-bottom:22px;"> <?= htmlspecialchars($row['start_date']) ?> to <?= htmlspecialchars($row['end_date']) ?> (<?= htmlspecialchars($row['duration']) ?> days)</div>
-          <div class="actions" onclick="event.stopPropagation();">
-            <?php if($row['status'] === 'pending'): ?>
-              <a href="?action=approve&leave_id=<?= $row['id'] ?>">Approve</a>
-              <a href="?action=reject&leave_id=<?= $row['id'] ?>">Reject</a>
-            <?php else: ?>
-              <span style="color:#888; font-size:13px;">-</span>
-            <?php endif; ?>
-          </div>
+        <h2>All Employee Leaves</h2>
+        
+        <!-- Add Filter Section -->
+        <div class="filter-section" style="margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <form id="filterForm" method="GET" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="status_filter">Status:</label>
+                    <select name="status_filter" id="status_filter" class="filter-input">
+                        <option value="">All Status</option>
+                        <option value="pending" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'pending' ? 'selected' : '' ?>>Pending</option>
+                        <option value="approved" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'approved' ? 'selected' : '' ?>>Approved</option>
+                        <option value="rejected" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'rejected' ? 'selected' : '' ?>>Rejected</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="date_from">From Date:</label>
+                    <input type="date" name="date_from" id="date_from" class="filter-input" value="<?= isset($_GET['date_from']) ? $_GET['date_from'] : '' ?>">
+                </div>
+                
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="date_to">To Date:</label>
+                    <input type="date" name="date_to" id="date_to" class="filter-input" value="<?= isset($_GET['date_to']) ? $_GET['date_to'] : '' ?>">
+                </div>
+                
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="employee_filter">Employee:</label>
+                    <select name="employee_filter" id="employee_filter" class="filter-input">
+                        <option value="">All Employees</option>
+                        <?php
+                        $employees = $conn->query('SELECT id, name FROM users WHERE role = "employee" ORDER BY name');
+                        while($emp = $employees->fetch_assoc()):
+                        ?>
+                        <option value="<?= $emp['id'] ?>" <?= isset($_GET['employee_filter']) && $_GET['employee_filter'] == $emp['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($emp['name']) ?>
+                        </option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="leave_type_filter">Leave Type:</label>
+                    <select name="leave_type_filter" id="leave_type_filter" class="filter-input">
+                        <option value="">All Types</option>
+                        <?php
+                        $leave_types = $conn->query('SELECT id, name FROM leave_types ORDER BY name');
+                        while($lt = $leave_types->fetch_assoc()):
+                        ?>
+                        <option value="<?= $lt['id'] ?>" <?= isset($_GET['leave_type_filter']) && $_GET['leave_type_filter'] == $lt['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($lt['name']) ?>
+                        </option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                
+                <div class="form-actions" style="display: flex; gap: 10px;">
+                    <button type="submit" class="filter-btn" style="background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Apply Filters</button>
+                    <button type="button" onclick="resetFilters()" class="filter-btn" style="background: #666; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Reset</button>
+                    <button type="button" onclick="exportToCSV()" class="filter-btn" style="background: #28a745; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Export CSV</button>
+                    <button type="button" onclick="exportToPDF()" class="filter-btn" style="background: #dc3545; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Export PDF</button>
+                </div>
+            </form>
         </div>
-      <?php $box = ob_get_clean();
-        if ($row['status'] === 'pending') $pendingBoxes .= $box;
-        else $historyBoxes .= $box;
-      endwhile; ?>
-      <?= $pendingBoxes ?>
-    </div>
-    <div class="leave-boxes" id="history-leaves" style="display:none;">
-      <?= $historyBoxes ?>
-    </div>
-  </div>
+
+        <div class="tab-btns">
+          <button class="tab-btn active" id="pendingTab" onclick="showTab('pending')">Pending</button>
+          <button class="tab-btn" id="historyTab" onclick="showTab('history')">History</button>
+        </div>
+        <div class="leave-boxes" id="pending-leaves">
+          <?php $leaves = [];
+          $pendingBoxes = '';
+          $historyBoxes = '';
+          while($row = $result->fetch_assoc()):
+            $leaves[$row['user_id']][] = $row;
+            ob_start(); ?>
+            <div class="leave-box" data-userid="<?= $row['user_id'] ?>" data-leaveid="<?= $row['id'] ?>" onclick="showHistory(<?= $row['user_id'] ?>, event)" data-status="<?= $row['status'] ?>">
+              <div style="font-weight:700; font-size:1.1em; margin-bottom:2px;"> <?= htmlspecialchars($row['name']) ?> </div>
+              <div style="font-size:0.98em; margin-bottom:4px;"> <?= htmlspecialchars($row['leave_type']) ?> </div>
+              <div class="status <?= htmlspecialchars($row['status']) ?>"> <?= htmlspecialchars(ucfirst($row['status'])) ?> </div>
+              <div style="font-size:0.95em; margin-bottom:22px;"> <?= htmlspecialchars($row['start_date']) ?> to <?= htmlspecialchars($row['end_date']) ?> (<?= htmlspecialchars($row['duration']) ?> days)</div>
+              <div class="actions" onclick="event.stopPropagation();">
+                <?php if($row['status'] === 'pending'): ?>
+                  <a href="?action=approve&leave_id=<?= $row['id'] ?>">Approve</a>
+                  <a href="?action=reject&leave_id=<?= $row['id'] ?>">Reject</a>
+                <?php else: ?>
+                  <span style="color:#888; font-size:13px;">-</span>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php $box = ob_get_clean();
+            if ($row['status'] === 'pending') $pendingBoxes .= $box;
+            else $historyBoxes .= $box;
+          endwhile; ?>
+          <?= $pendingBoxes ?>
+        </div>
+        <div class="leave-boxes" id="history-leaves" style="display:none;">
+          <?= $historyBoxes ?>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1588,6 +1700,49 @@ $recent_requests = $conn->query('
       if (event.target == document.getElementById('addLeaveTypeModal')) {
         hideAddLeaveTypeModal();
       }
+    }
+
+    // Add filter functionality
+    function resetFilters() {
+        document.getElementById('status_filter').value = '';
+        document.getElementById('date_from').value = '';
+        document.getElementById('date_to').value = '';
+        document.getElementById('employee_filter').value = '';
+        document.getElementById('leave_type_filter').value = '';
+        document.getElementById('filterForm').submit();
+    }
+
+    // Export to CSV
+    function exportToCSV() {
+        const filters = new URLSearchParams(new FormData(document.getElementById('filterForm'))).toString();
+        window.location.href = `export_leave_data.php?format=csv&${filters}`;
+    }
+
+    // Export to PDF
+    function exportToPDF() {
+        const filters = new URLSearchParams(new FormData(document.getElementById('filterForm'))).toString();
+        window.location.href = `export_leave_data.php?format=pdf&${filters}`;
+    }
+
+    function exportData(format) {
+        const statusFilter = document.getElementById('status_filter').value;
+        const dateFrom = document.getElementById('date_from').value;
+        const dateTo = document.getElementById('date_to').value;
+        const employeeFilter = document.getElementById('employee_filter').value;
+        const leaveTypeFilter = document.getElementById('leave_type_filter').value;
+
+        // Build query string
+        const params = new URLSearchParams({
+            format: format,
+            status_filter: statusFilter,
+            date_from: dateFrom,
+            date_to: dateTo,
+            employee_filter: employeeFilter,
+            leave_type_filter: leaveTypeFilter
+        });
+
+        // Redirect to export script
+        window.location.href = `export_leave_data.php?${params.toString()}`;
     }
 
   </script>

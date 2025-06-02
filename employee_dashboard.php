@@ -33,13 +33,15 @@ $result = $stmt->get_result();
         <form action="apply_leave.php" method="POST" id="leaveForm" style="display:flex; flex-direction:column; gap:10px;">
           <label for="leave_type">Leave Type:</label>
           <select name="leave_type" id="leave_type" required>
-            <option value="" disabled selected hidden>Select leave type</option>
+            <option value="">Select Leave Type</option>
             <?php
-              $leave_types_query = $conn->query('SELECT id, name FROM leave_types ORDER BY name');
-              while($lt = $leave_types_query->fetch_assoc()) {
-                  echo '<option value="' . htmlspecialchars($lt['id']) . '">' . htmlspecialchars($lt['name']) . '</option>';
-              }
+            $leave_types_query = $conn->query('SELECT id, name, description FROM leave_types ORDER BY name');
+            while($lt = $leave_types_query->fetch_assoc()):
             ?>
+            <option value="<?= $lt['id'] ?>" title="<?= htmlspecialchars($lt['description']) ?>">
+                <?= htmlspecialchars($lt['name']) ?>
+            </option>
+            <?php endwhile; ?>
           </select>
           <label for="duration">Duration:</label>
           <select name="duration" id="duration" required style="width:100%;"></select>
