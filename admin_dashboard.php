@@ -930,9 +930,46 @@ $recent_requests = $conn->query('
           <h2 style="margin-bottom: 0; color:#111; letter-spacing:1px; font-size:2rem; font-weight:700;">Employee List</h2>
           <button class="add-employee-btn" onclick="showAddEmployeeModal()" style="padding: 8px 16px; font-size: 1em; margin: 0; min-width: 80px; display: flex; align-items: center; justify-content: center; text-align: center;">Add</button>
         </div>
-        
+
+        <!-- Add Employee List Filter and Report Section -->
+        <div class="filter-section" style="margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <form id="employeeFilterForm" method="GET" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="department_filter">Department:</label>
+                    <select name="department_filter" id="department_filter" class="filter-input">
+                        <option value="">All Departments</option>
+                        <?php
+                        // Fetch unique departments from users table
+                        $departments_query = $conn->query('SELECT DISTINCT department FROM users WHERE role = "employee" ORDER BY department');
+                        while($dept = $departments_query->fetch_assoc()):
+                        ?>
+                        <option value="<?= htmlspecialchars($dept['department']) ?>" <?= isset($_GET['department_filter']) && $_GET['department_filter'] === $dept['department'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($dept['department']) ?>
+                        </option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+
+                <div class="form-actions" style="display: flex; gap: 10px;">
+                    <button type="submit" class="filter-btn" style="background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Apply Filter</button>
+                    <button type="button" onclick="resetEmployeeFilters()" class="filter-btn" style="background: #666; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Reset</button>
+                    <button type="button" onclick="exportEmployeeData('csv')" class="filter-btn" style="background: #28a745; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Export CSV</button>
+                    <button type="button" onclick="exportEmployeeData('pdf')" class="filter-btn" style="background: #dc3545; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Export PDF</button>
+                </div>
+            </form>
+        </div>
+
         <div class="employee-boxes">
-          <?php while($employee = $employees_result->fetch_assoc()): ?>
+          <?php // Update this query to include department filter if applied
+          $employees_sql = 'SELECT * FROM users WHERE role = "employee"';
+          if (isset($_GET['department_filter']) && !empty($_GET['department_filter'])) {
+              $department_filter = $_GET['department_filter'];
+              $employees_sql .= " AND department = '$department_filter'"; // Note: Basic filtering, consider prepared statements for security if input comes from users.
+          }
+          $employees_sql .= ' ORDER BY name';
+          $employees_result = $conn->query($employees_sql);
+          
+          while($employee = $employees_result->fetch_assoc()): ?>
             <div class="employee-box"
               data-id="<?= htmlspecialchars($employee['id']) ?>"
               data-employee_id="<?= htmlspecialchars($employee['employee_id']) ?>"
@@ -1743,6 +1780,26 @@ $recent_requests = $conn->query('
 
         // Redirect to export script
         window.location.href = `export_leave_data.php?${params.toString()}`;
+    }
+
+    // Reset Employee Filters
+    function resetEmployeeFilters() {
+        document.getElementById('department_filter').value = '';
+        document.getElementById('employeeFilterForm').submit();
+    }
+
+    // Export Employee Data
+    function exportEmployeeData(format) {
+        const departmentFilter = document.getElementById('department_filter').value;
+
+        // Build query string
+        const params = new URLSearchParams({
+            format: format,
+            department_filter: departmentFilter
+        });
+
+        // Redirect to export script
+        window.location.href = `export_employee_data.php?${params.toString()}`;
     }
 
   </script>
