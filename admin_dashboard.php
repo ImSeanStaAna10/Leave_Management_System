@@ -1,30 +1,54 @@
 <?php
 session_start();
 include 'db.php';
+
+// Generate and validate CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+function validate_csrf_token($token) {
+    if (empty($token) || empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+        return false;
+    }
+    return true;
+}
+
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
     header('Location: login.html');
     exit();
 }
 
 // Handle leave request actions (Approve/Reject)
-if (isset($_GET['action']) && isset($_GET['leave_id'])) {
-    $action = $_GET['action'];
-    $leave_id = $_GET['leave_id'];
-
-    if ($action === 'approve' || $action === 'reject') {
-        $status = $action === 'approve' ? 'approved' : 'rejected';
-        $stmt = $conn->prepare('UPDATE leaves SET status = ? WHERE id = ?');
-        $stmt->bind_param('si', $status, $leave_id);
-        $stmt->execute();
+if (isset($_POST['action']) && isset($_POST['leave_id']) && ($_POST['action'] === 'approve' || $_POST['action'] === 'reject')) {
+    
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+        die('CSRF token validation failed.'); // Or handle the error more gracefully
     }
+
+    $action = $_POST['action'];
+    $leave_id = $_POST['leave_id'];
+
+    $status = $action === 'approve' ? 'approved' : 'rejected';
+    $stmt = $conn->prepare('UPDATE leaves SET status = ? WHERE id = ?');
+    $stmt->bind_param('si', $status, $leave_id);
+    $stmt->execute();
+    
     // Redirect back to the requests list after action
     header('Location: admin_dashboard.php#request-list');
     exit();
 }
 
 // Handle delete leave type action
-if (isset($_GET['action']) && $_GET['action'] === 'delete_leave_type' && isset($_GET['leave_type_id'])) {
-    $leave_type_id = $_GET['leave_type_id'];
+if (isset($_POST['action']) && $_POST['action'] === 'delete_leave_type' && isset($_POST['leave_type_id'])) {
+
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+        die('CSRF token validation failed.'); // Or handle the error more gracefully
+    }
+
+    $leave_type_id = $_POST['leave_type_id'];
 
     // Add a check to ensure no leaves are associated with this type before deleting
     $check_leaves_stmt = $conn->prepare('SELECT COUNT(*) FROM leaves WHERE leave_type = ?');
@@ -399,12 +423,123 @@ $recent_requests = $conn->query('
             --light: #f8f9fa;
             --sidebar-width: 250px;
             --header-height: 60px;
+
+            /* Light theme variables */
+            --body-bg-light: #f5f7fb;
+            --main-content-bg-light: #f5f7fb;
+            --card-bg-light: #fff;
+            --card-header-bg-light: #fff;
+            --text-color-light: #212529;
+            --secondary-text-color-light: #6c757d;
+            --border-color-light: #e9ecef;
+            --table-border-color-light: #edf2f9;
+            --table-header-bg-light: var(--primary);
+            --table-header-color-light: white;
+            --table-row-hover-bg-light: rgba(67, 97, 238, 0.05);
+            --modal-content-bg-light: #fff;
+            --modal-header-border-light: #f0f0f0;
+            --modal-title-color-light: var(--dark);
+            --names-list-bg-light: #f8f9fa;
+            --names-item-hover-bg-light: #e3f2fd;
+            --leave-box-bg-light: white;
+            --leave-box-border-left-light: var(--primary);
+            --button-primary-bg-light: var(--primary);
+            --button-primary-color-light: white;
+            --button-outline-secondary-color-light: #6c757d;
+            --button-success-bg-light: #28a745;
+            --button-success-color-light: white;
+            --button-danger-bg-light: #dc3545;
+            --button-danger-color-light: white;
+
+            /* Dark theme variables */
+            --body-bg-dark: #1a1a1a;
+            --main-content-bg-dark: #1a1a1a;
+            --card-bg-dark: #2d2d2d;
+            --card-header-bg-dark: #3c3c3c;
+            --text-color-dark: #e0e0e0;
+            --secondary-text-color-dark: #b0b0b0;
+            --border-color-dark: #3a3a3a;
+            --table-border-color-dark: #444;
+            --table-header-bg-dark: #555;
+            --table-header-color-dark: #eee;
+            --table-row-hover-bg-dark: rgba(100, 100, 100, 0.1);
+            --modal-content-bg-dark: #2d2d2d;
+            --modal-header-border-dark: #444;
+            --modal-title-color-dark: #eee;
+            --names-list-bg-dark: #3a3a3a;
+            --names-item-hover-bg-dark: #555;
+            --leave-box-bg-dark: #2d2d2d;
+            --leave-box-border-left-dark: var(--primary);
+            --button-primary-bg-dark: #5a7aff;
+            --button-primary-color-dark: white;
+            --button-outline-secondary-color-dark: #b0b0b0;
+            --button-success-bg-dark: #3cb371;
+            --button-success-color-dark: white;
+            --button-danger-bg-dark: #ff6347;
+            --button-danger-color-dark: white;
+
+            /* Default theme (Light) */
+            --body-bg: var(--body-bg-light);
+            --main-content-bg: var(--main-content-bg-light);
+            --card-bg: var(--card-bg-light);
+            --card-header-bg: var(--card-header-bg-light);
+            --text-color: var(--text-color-light);
+            --secondary-text-color: var(--secondary-text-color-light);
+            --border-color: var(--border-color-light);
+            --table-border-color: var(--table-border-color-light);
+            --table-header-bg: var(--table-header-bg-light);
+            --table-header-color: var(--table-header-color-light);
+            --table-row-hover-bg: var(--table-row-hover-bg-light);
+            --modal-content-bg: var(--modal-content-bg-light);
+            --modal-header-border: var(--modal-header-border-light);
+            --modal-title-color: var(--modal-title-color-light);
+            --names-list-bg: var(--names-list-bg-light);
+            --names-item-hover-bg: var(--names-item-hover-bg-light);
+            --leave-box-bg: var(--leave-box-bg-light);
+            --leave-box-border-left: var(--leave-box-border-left-light);
+            --button-primary-bg: var(--button-primary-bg-light);
+            --button-primary-color: var(--button-primary-color-light);
+            --button-outline-secondary-color: var(--button-outline-secondary-color-light);
+            --button-success-bg: var(--button-success-bg-light);
+            --button-success-color: var(--button-success-color-light);
+            --button-danger-bg: var(--button-danger-bg-light);
+            --button-danger-color: var(--button-danger-color-light);
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            --body-bg: var(--body-bg-dark);
+            --main-content-bg: var(--main-content-bg-dark);
+            --card-bg: var(--card-bg-dark);
+            --card-header-bg: var(--card-header-bg-dark);
+            --text-color: var(--text-color-dark);
+            --secondary-text-color: var(--secondary-text-color-dark);
+            --border-color: var(--border-color-dark);
+            --table-border-color: var(--table-border-color-dark);
+            --table-header-bg: var(--table-header-bg-dark);
+            --table-header-color: var(--table-header-color-dark);
+            --table-row-hover-bg: var(--table-row-hover-bg-dark);
+            --modal-content-bg: var(--modal-content-bg-dark);
+            --modal-header-border: var(--modal-header-border-dark);
+            --modal-title-color: var(--modal-title-color-dark);
+            --names-list-bg: var(--names-list-bg-dark);
+            --names-item-hover-bg: var(--names-item-hover-bg-dark);
+            --leave-box-bg: var(--leave-box-bg-dark);
+            --leave-box-border-left: var(--leave-box-border-left-dark);
+            --button-primary-bg: var(--button-primary-bg-dark);
+            --button-primary-color: var(--button-primary-color-dark);
+            --button-outline-secondary-color: var(--button-outline-secondary-color-dark);
+            --button-success-bg: var(--button-success-bg-dark);
+            --button-success-color: var(--button-success-color-dark);
+            --button-danger-bg: var(--button-danger-bg-dark);
+            --button-danger-color: var(--button-danger-color-dark);
         }
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fb;
+            background-color: var(--body-bg);
             overflow-x: hidden;
+            color: var(--text-color);
         }
         
         /* Sidebar styles */
@@ -420,6 +555,8 @@ $recent_requests = $conn->query('
             z-index: 100;
             box-shadow: 3px 0 10px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
+            display: flex; /* Added to push theme switcher to bottom */
+            flex-direction: column; /* Added to push theme switcher to bottom */
         }
         
         .sidebar .nav-link {
@@ -457,11 +594,13 @@ $recent_requests = $conn->query('
             margin-left: var(--sidebar-width);
             padding: 20px;
             transition: all 0.3s ease;
+            background-color: var(--main-content-bg);
+            color: var(--text-color);
         }
         
         /* Header */
         .header {
-            background: white;
+            background: var(--card-bg);
             height: var(--header-height);
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             position: fixed;
@@ -474,6 +613,7 @@ $recent_requests = $conn->query('
             justify-content: space-between;
             padding: 0 20px;
             transition: all 0.3s ease;
+            color: var(--text-color);
         }
         
         /* Dashboard cards */
@@ -484,7 +624,7 @@ $recent_requests = $conn->query('
             transition: transform 0.3s ease;
             margin-bottom: 20px;
             height: 100%;
-            color: white;
+            color: white; /* Text color for dashboard cards remains white */
         }
         
         .dashboard-card:hover {
@@ -517,15 +657,16 @@ $recent_requests = $conn->query('
             border-collapse: separate;
             border-spacing: 0;
             width: 100%;
-            background: white;
+            background: var(--card-bg);
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            color: var(--text-color);
         }
         
         .custom-table thead th {
-            background: var(--primary);
-            color: white;
+            background: var(--table-header-bg);
+            color: var(--table-header-color);
             padding: 15px 20px;
             font-weight: 600;
         }
@@ -535,12 +676,12 @@ $recent_requests = $conn->query('
         }
         
         .custom-table tbody tr:hover {
-            background-color: rgba(67, 97, 238, 0.05);
+            background-color: var(--table-row-hover-bg);
         }
         
         .custom-table tbody td {
             padding: 15px 20px;
-            border-top: 1px solid #edf2f9;
+            border-top: 1px solid var(--table-border-color);
         }
         
         /* Employee cards */
@@ -550,7 +691,8 @@ $recent_requests = $conn->query('
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             transition: all 0.3s ease;
             margin-bottom: 20px;
-            background: white;
+            background: var(--card-bg);
+            color: var(--text-color);
         }
         
         .employee-card:hover {
@@ -574,12 +716,12 @@ $recent_requests = $conn->query('
             bottom: -45px;
             left: 50%;
             transform: translateX(-50%);
-            background: white;
+            background: var(--card-bg);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            border: 4px solid white;
+            border: 4px solid var(--card-bg);
             box-shadow: 0 2px 15px rgba(0,0,0,0.2);
         }
         
@@ -598,17 +740,18 @@ $recent_requests = $conn->query('
             font-weight: 700;
             font-size: 1.1rem;
             margin-bottom: 5px;
+            color: var(--text-color);
         }
         
         .employee-card .employee-title {
-            color: #6c757d;
+            color: var(--secondary-text-color);
             font-size: 0.9rem;
             margin-bottom: 15px;
         }
         
         .employee-card .employee-contact {
             font-size: 0.9rem;
-            color: #495057;
+            color: var(--text-color);
         }
         
         /* Status badges */
@@ -636,14 +779,15 @@ $recent_requests = $conn->query('
         
         /* Leave boxes */
         .leave-box {
-            background: white;
+            background: var(--leave-box-bg);
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             transition: all 0.3s ease;
             position: relative;
-            border-left: 4px solid var(--primary);
+            border-left: 4px solid var(--leave-box-border-left);
+            color: var(--text-color);
         }
         
         .leave-box:hover {
@@ -655,10 +799,11 @@ $recent_requests = $conn->query('
             font-weight: 600;
             font-size: 1.1rem;
             margin-bottom: 5px;
+            color: var(--text-color);
         }
         
         .leave-box .leave-type {
-            color: #6c757d;
+            color: var(--secondary-text-color);
             font-size: 0.9rem;
             margin-bottom: 15px;
         }
@@ -693,16 +838,16 @@ $recent_requests = $conn->query('
         }
         
         ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #f1f1f1; /* Consider adding dark mode scrollbar styles */
         }
         
         ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
+            background: #c1c1c1; /* Consider adding dark mode scrollbar styles */
             border-radius: 4px;
         }
         
         ::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
+            background: #a8a8a8; /* Consider adding dark mode scrollbar styles */
         }
         
         /* Action buttons */
@@ -714,14 +859,14 @@ $recent_requests = $conn->query('
         }
         
         .btn-approve {
-            background: #28a745;
-            color: white;
+            background: var(--button-success-bg);
+            color: var(--button-success-color);
             border: none;
         }
         
         .btn-reject {
-            background: #dc3545;
-            color: white;
+            background: var(--button-danger-bg);
+            color: var(--button-danger-color);
             border: none;
         }
         
@@ -730,8 +875,8 @@ $recent_requests = $conn->query('
             font-weight: 700;
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #e9ecef;
-            color: var(--dark);
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-color);
         }
         
         .section-title i {
@@ -741,9 +886,9 @@ $recent_requests = $conn->query('
         
         /* Tab buttons */
         .tab-btn {
-            background: #e9ecef;
+            background: var(--border-color);
             border: none;
-            color: #495057;
+            color: var(--secondary-text-color);
             padding: 10px 20px;
             border-radius: 6px;
             font-weight: 500;
@@ -830,6 +975,8 @@ $recent_requests = $conn->query('
                 </a>
             </li>
         </ul>
+
+       
     </div>
 
     <!-- Header -->
@@ -1110,12 +1257,24 @@ $recent_requests = $conn->query('
                                             </span>
                                             <?php if($row['status'] === 'pending'): ?>
                                                 <div>
-                                                    <a href="?action=approve&leave_id=<?= $row['id'] ?>" class="btn-action btn-approve">
-                                                        <i class="bi bi-check-lg"></i> Approve
-                                                    </a>
-                                                    <a href="?action=reject&leave_id=<?= $row['id'] ?>" class="btn-action btn-reject">
-                                                        <i class="bi bi-x-lg"></i> Reject
-                                                    </a>
+                                                    <!-- Approve form -->
+                                                    <form method="POST" action="admin_dashboard.php" style="display: inline;">
+                                                        <input type="hidden" name="action" value="approve">
+                                                        <input type="hidden" name="leave_id" value="<?= $row['id'] ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                                        <button type="submit" class="btn-action btn-approve" title="Approve">
+                                                            <i class="bi bi-check-lg"></i> Approve
+                                                        </button>
+                                                    </form>
+                                                    <!-- Reject form -->
+                                                    <form method="POST" action="admin_dashboard.php" style="display: inline;">
+                                                        <input type="hidden" name="action" value="reject">
+                                                        <input type="hidden" name="leave_id" value="<?= $row['id'] ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                                        <button type="submit" class="btn-action btn-reject" title="Reject">
+                                                            <i class="bi bi-x-lg"></i> Reject
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
@@ -1166,11 +1325,15 @@ $recent_requests = $conn->query('
                                     <td><?= htmlspecialchars($lt['days']) ?></td>
                                     <td><?= htmlspecialchars($lt['description']) ?></td>
                                     <td>
-                                        <a href="?action=delete_leave_type&leave_type_id=<?= $lt['id'] ?>" 
-                                           onclick="return confirm('Are you sure you want to delete this leave type?');" 
-                                           class="btn btn-sm btn-danger">
-                                            <i class="bi bi-trash"></i> Delete
-                                        </a>
+                                        <!-- Delete leave type form -->
+                                        <form method="POST" action="admin_dashboard.php" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this leave type?');">
+                                            <input type="hidden" name="action" value="delete_leave_type">
+                                            <input type="hidden" name="leave_type_id" value="<?= $lt['id'] ?>">
+                                            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                                 <?php endwhile; ?>
@@ -1574,22 +1737,24 @@ $recent_requests = $conn->query('
                                         <div class="col-md-4 text-center">
                                             <img src="${employee.profile_picture && employee.profile_picture !== 'default-avatar.png' ? employee.profile_picture : 'uploads/default-avatar.png'}" 
                                                  alt="Profile Picture" class="img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;">
-                                            <h6 class="mb-1">${employee.name}</h6>
-                                            <p class="text-muted">${employee.employee_id}</p>
                                         </div>
-                                        <div class="col-md-4">
-                                            <h6>Employee Information</h6>
-                                            <p><strong>Department:</strong> ${employee.department}</p>
-                                            <p><strong>Job Title:</strong> ${employee.job_title}</p>
-                                            <p><strong>Email:</strong> ${employee.email}</p>
-                                            <p><strong>Contact:</strong> ${employee.contact_number}</p>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <h6>Leave Statistics</h6>
-                                            <p><strong>Total Leaves:</strong> ${employee.total_leaves}</p>
-                                            <p><strong>Approved:</strong> ${employee.approved_leaves}</p>
-                                            <p><strong>Pending:</strong> ${employee.pending_leaves}</p>
-                                            <p><strong>Rejected:</strong> ${employee.rejected_leaves}</p>
+                                        <div class="col-md-8">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6>Employee Information</h6>
+                                                    <p><strong>Department:</strong> ${employee.department}</p>
+                                                    <p><strong>Job Title:</strong> ${employee.job_title}</p>
+                                                    <p><strong>Email:</strong> ${employee.email}</p>
+                                                    <p><strong>Contact:</strong> ${employee.contact_number}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6>Leave Statistics</h6>
+                                                    <p><strong>Total Leaves:</strong> ${employee.total_leaves}</p>
+                                                    <p><strong>Approved:</strong> ${employee.approved_leaves}</p>
+                                                    <p><strong>Pending:</strong> ${employee.pending_leaves}</p>
+                                                    <p><strong>Rejected:</strong> ${employee.rejected_leaves}</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="mt-3">
@@ -1758,6 +1923,145 @@ $recent_requests = $conn->query('
         function exportSearchResults() {
             const searchTerm = document.getElementById('globalSearch').value.trim();
             window.location.href = `export_search_results.php?term=${encodeURIComponent(searchTerm)}`;
+        }
+
+        // Initialize Bootstrap modals
+        const leaveDetailsModal = new bootstrap.Modal(document.getElementById('leaveDetailsModal'));
+        const employeeDetailsModal = new bootstrap.Modal(document.getElementById('employeeDetailsModal'));
+        const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+        
+        // Global variables for confirmation
+        let currentAction = null;
+        let currentId = null;
+
+        // Function to show confirmation modal
+        function showConfirmation(message, action, id) {
+            document.getElementById('confirmationMessage').textContent = message;
+            currentAction = action;
+            currentId = id;
+            confirmationModal.show();
+        }
+
+        // Handle confirmation button click
+        document.getElementById('confirmActionBtn').addEventListener('click', function() {
+            if (currentAction === 'deleteLeave') {
+                deleteLeaveRequest(currentId);
+            } else if (currentAction === 'deleteEmployee') {
+                deleteEmployee(currentId);
+            }
+            confirmationModal.hide();
+        });
+
+        // Update delete functions to use confirmation modal
+        function deleteLeaveRequest(id) {
+            showConfirmation('Are you sure you want to delete this leave request?', 'deleteLeave', id);
+        }
+
+        function deleteEmployee(id) {
+            showConfirmation('Are you sure you want to delete this employee?', 'deleteEmployee', id);
+        }
+
+        // Update the actual delete functions
+        function confirmDeleteLeave(id) {
+            fetch('delete_leave.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'id=' + id
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    // Remove the row from the table
+                    document.querySelector(`tr[data-leave-id="${id}"]`).remove();
+                    // Show success message
+                    alert('Leave request deleted successfully');
+                } else {
+                    alert('Error deleting leave request: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting leave request');
+            });
+        }
+
+        function confirmDeleteEmployee(id) {
+            fetch('delete_employee.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'id=' + id
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    // Remove the row from the table
+                    document.querySelector(`tr[data-employee-id="${id}"]`).remove();
+                    // Show success message
+                    alert('Employee deleted successfully');
+                } else {
+                    alert('Error deleting employee: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting employee');
+            });
+        }
+    </script>
+    <!-- Custom Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmationMessage">Are you sure you want to proceed with this action?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmActionBtn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize confirmation modal
+        const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+        let currentAction = null;
+        let currentId = null;
+
+        // Function to show confirmation modal
+        function showConfirmation(message, action, id) {
+            document.getElementById('confirmationMessage').textContent = message;
+            currentAction = action;
+            currentId = id;
+            confirmationModal.show();
+        }
+
+        // Handle confirmation button click
+        document.getElementById('confirmActionBtn').addEventListener('click', function() {
+            if (currentAction === 'deleteLeave') {
+                confirmDeleteLeave(currentId);
+            } else if (currentAction === 'deleteEmployee') {
+                confirmDeleteEmployee(currentId);
+            }
+            confirmationModal.hide();
+        });
+
+        // Update delete functions to use confirmation modal
+        function deleteLeaveRequest(id) {
+            showConfirmation('Are you sure you want to delete this leave request?', 'deleteLeave', id);
+        }
+
+        function deleteEmployee(id) {
+            showConfirmation('Are you sure you want to delete this employee?', 'deleteEmployee', id);
         }
     </script>
 </body>

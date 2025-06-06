@@ -728,24 +728,24 @@ if ($nextMonth > 12) {
                                         <div class="col-md-4 text-center">
                                             <img src="${employee.profile_picture && employee.profile_picture !== 'default-avatar.png' ? employee.profile_picture : 'uploads/default-avatar.png'}" 
                                                  alt="Profile Picture" class="img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;">
-                                            <h6 class="mb-1">${employee.name}</h6>
-                                            <p class="text-muted">${employee.employee_id}</p>
                                         </div>
-                                        <!-- Employee Information -->
-                                        <div class="col-md-4">
-                                            <h6>Employee Information</h6>
-                                            <p><strong>Department:</strong> ${employee.department}</p>
-                                            <p><strong>Job Title:</strong> ${employee.job_title}</p>
-                                            <p><strong>Email:</strong> ${employee.email}</p>
-                                            <p><strong>Contact:</strong> ${employee.contact_number}</p>
-                                        </div>
-                                        <!-- Leave Statistics -->
-                                        <div class="col-md-4">
-                                            <h6>Leave Statistics</h6>
-                                            <p><strong>Total Leaves:</strong> ${employee.total_leaves}</p>
-                                            <p><strong>Approved:</strong> ${employee.approved_leaves}</p>
-                                            <p><strong>Pending:</strong> ${employee.pending_leaves}</p>
-                                            <p><strong>Rejected:</strong> ${employee.rejected_leaves}</p>
+                                        <div class="col-md-8">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6>Employee Information</h6>
+                                                    <p><strong>Department:</strong> ${employee.department}</p>
+                                                    <p><strong>Job Title:</strong> ${employee.job_title}</p>
+                                                    <p><strong>Email:</strong> ${employee.email}</p>
+                                                    <p><strong>Contact:</strong> ${employee.contact_number}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6>Leave Statistics</h6>
+                                                    <p><strong>Total Leaves:</strong> ${employee.total_leaves}</p>
+                                                    <p><strong>Approved:</strong> ${employee.approved_leaves}</p>
+                                                    <p><strong>Pending:</strong> ${employee.pending_leaves}</p>
+                                                    <p><strong>Rejected:</strong> ${employee.rejected_leaves}</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="mt-3">

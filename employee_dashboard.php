@@ -328,7 +328,7 @@ $result = $stmt->get_result();
       </div>
       
       <div class="table-responsive">
-        <table class="table table-hover">
+        <table class="table table-hover" id="employeeLeaveTable">
           <thead class="table-header">
             <tr>
               <th>Request Date</th>
@@ -346,7 +346,14 @@ $result = $stmt->get_result();
               $statusClass = $status === 'approved' ? 'status-approved' : 
                             ($status === 'rejected' ? 'status-rejected' : 'status-pending');
             ?>
-            <tr>
+            <tr class="clickable-row" style="cursor: pointer;"
+                data-applied-at="<?= htmlspecialchars($row['applied_at']) ?>"
+                data-duration="<?= htmlspecialchars($row['duration']) ?>"
+                data-leave-type="<?= htmlspecialchars($row['leave_type']) ?>"
+                data-start-date="<?= htmlspecialchars($row['start_date']) ?>"
+                data-end-date="<?= htmlspecialchars($row['end_date']) ?>"
+                data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
+                data-status="<?= htmlspecialchars($row['status']) ?>">
               <td><?= htmlspecialchars($row['applied_at']) ?></td>
               <td><?= htmlspecialchars($row['duration']) ?> days</td>
               <td><?= htmlspecialchars($row['leave_type']) ?></td>
@@ -369,8 +376,8 @@ $result = $stmt->get_result();
     
     <!-- Footer -->
     <div class="footer">
-      <p class="mb-0">© 2023 Leave Management System. All rights reserved.</p>
-      <small>Employee Dashboard v2.0</small>
+      <p class="mb-0">© 2025 Leave Management System. Group 1 All rights reserved.</p>
+      <small>Employee Dashboard</small>
     </div>
   </div>
   
@@ -448,6 +455,29 @@ $result = $stmt->get_result();
       </div>
     </div>
   </div>
+
+    <!-- Leave Request Details Modal (for Employee) -->
+    <div class="modal fade" id="leaveDetailsModalEmployee" tabindex="-1" aria-labelledby="leaveDetailsModalEmployeeLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="leaveDetailsModalEmployeeLabel">Leave Request Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Request Date:</strong> <span id="modal-employee-applied-at"></span></p>
+                    <p><strong>Leave Type:</strong> <span id="modal-employee-leave-type"></span></p>
+                    <p><strong>Dates:</strong> <span id="modal-employee-leave-dates"></span></p>
+                    <p><strong>Duration:</strong> <span id="modal-employee-leave-duration"></span> days</p>
+                    <p><strong>Purpose:</strong> <span id="modal-employee-leave-purpose"></span></p>
+                    <p><strong>Status:</strong> <span id="modal-employee-leave-status"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
   
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
@@ -518,8 +548,52 @@ $result = $stmt->get_result();
     // Initialize duration options
     window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('duration').innerHTML = '';
+      updateDurationOptions(); // Call this on load to populate initial duration options
       calculateEndDate();
     });
+
+    // JavaScript for Employee Leave Request Details Modal
+    const leaveDetailsModalEmployee = new bootstrap.Modal(document.getElementById('leaveDetailsModalEmployee'));
+    const leaveTableRows = document.querySelectorAll('#employeeLeaveTable tbody tr'); // Select rows in the leave table
+
+    leaveTableRows.forEach(row => {
+        row.style.cursor = 'pointer'; // Add cursor pointer to indicate clickability
+        row.addEventListener('click', function() {
+            // Get data from the clicked row (using data attributes if added, or cell content)
+            // For now, let's get text content from cells. We'll add data attributes next.
+            const cells = this.querySelectorAll('td');
+            const appliedAt = cells[0].textContent;
+            const duration = cells[1].textContent.replace(' days', ''); // Remove " days"
+            const leaveType = cells[2].textContent;
+            const startDate = cells[3].textContent;
+            const endDate = cells[4].textContent;
+            const purpose = cells[5].getAttribute('data-reason') || cells[5].textContent; // Get full reason from data-reason if available
+            const status = cells[6].textContent.trim(); // Trim whitespace
+
+            // Populate modal with data
+            document.getElementById('modal-employee-applied-at').textContent = appliedAt;
+            document.getElementById('modal-employee-leave-type').textContent = leaveType;
+            document.getElementById('modal-employee-leave-dates').textContent = `${startDate} to ${endDate}`;
+            document.getElementById('modal-employee-leave-duration').textContent = duration;
+            document.getElementById('modal-employee-leave-purpose').textContent = purpose;
+
+             // Set status text and style
+             const statusSpan = document.getElementById('modal-employee-leave-status');
+             statusSpan.textContent = status;
+             statusSpan.className = 'status-badge'; // Reset classes
+             if (status.toLowerCase() === 'pending') {
+                 statusSpan.classList.add('status-pending');
+             } else if (status.toLowerCase() === 'approved') {
+                 statusSpan.classList.add('status-approved');
+             } else if (status.toLowerCase() === 'rejected') {
+                 statusSpan.classList.add('status-rejected');
+             }
+
+            // Show the modal
+            leaveDetailsModalEmployee.show();
+        });
+    });
+
   </script>
 </body>
 </html>
