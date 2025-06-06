@@ -14,7 +14,7 @@ $year = isset($_GET['year']) ? intval($_GET['year']) : intval(date('Y'));
 
 // Get monthly leave statistics
 $sql = "SELECT 
-            u.name as employee_name,
+            u.name as employee_name, u.profile_picture,
             COUNT(l.id) as total_leaves,
             SUM(l.duration) as total_days,
             GROUP_CONCAT(DISTINCT lt.name) as leave_types
@@ -418,6 +418,15 @@ $rejection_rate = $total_leaves_all > 0 ? round(($rejected_count / $total_leaves
             color: white;
             border: none;
         }
+        
+        /* Add CSS for profile pictures in reports tables */
+        .report-profile-pic {
+            width: 50px; /* Adjust size as needed */
+            height: 50px; /* Adjust size as needed */
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary); /* Optional border */
+        }
     </style>
 </head>
 <body>
@@ -584,6 +593,7 @@ $rejection_rate = $total_leaves_all > 0 ? round(($rejected_count / $total_leaves
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th></th> <!-- New column for profile picture -->
                                 <th>Employee</th>
                                 <th>Days</th>
                                 <th>Dept</th>
@@ -598,6 +608,8 @@ $rejection_rate = $total_leaves_all > 0 ? round(($rejected_count / $total_leaves
                                 if ($row['total_days'] > 0): 
                                     $counter++;
                                     // Get department for this employee
+                                    // The profile_picture is already fetched in the main query
+                                    $profile_picture = $row['profile_picture'] ? $row['profile_picture'] : 'uploads/default-avatar.png';
                                     $dept_stmt = $conn->prepare("SELECT department FROM users WHERE name = ?");
                                     $dept_stmt->bind_param("s", $row['employee_name']);
                                     $dept_stmt->execute();
@@ -605,6 +617,9 @@ $rejection_rate = $total_leaves_all > 0 ? round(($rejected_count / $total_leaves
                                     $department = $dept_result->fetch_assoc()['department'];
                             ?>
                             <tr>
+                                <td>
+                                    <img src="<?= htmlspecialchars($profile_picture) ?>" alt="Profile Picture" class="report-profile-pic">
+                                </td>
                                 <td><?= htmlspecialchars($row['employee_name']) ?></td>
                                 <td><?= $row['total_days'] ?></td>
                                 <td><?= htmlspecialchars($department) ?></td>
@@ -654,6 +669,7 @@ $rejection_rate = $total_leaves_all > 0 ? round(($rejected_count / $total_leaves
                 <table class="custom-table">
                     <thead>
                         <tr>
+                            <th></th> <!-- New column for profile picture -->
                             <th>Employee</th>
                             <th>Department</th>
                             <th>Leave Type</th>
@@ -669,6 +685,7 @@ $rejection_rate = $total_leaves_all > 0 ? round(($rejected_count / $total_leaves
                         $detail_sql = "SELECT 
                                             u.name as employee_name,
                                             u.department,
+                                            u.profile_picture, /* Include profile picture here */
                                             lt.name as leave_type,
                                             l.start_date,
                                             l.end_date,
@@ -690,8 +707,12 @@ $rejection_rate = $total_leaves_all > 0 ? round(($rejected_count / $total_leaves
                         while($row = $detail_result->fetch_assoc()):
                             $status_class = $row['status'] === 'approved' ? 'badge-approved' : 
                                           ($row['status'] === 'pending' ? 'badge-pending' : 'badge-rejected');
+                            $profile_picture = $row['profile_picture'] ? $row['profile_picture'] : 'uploads/default-avatar.png';
                         ?>
                         <tr>
+                            <td>
+                                <img src="<?= htmlspecialchars($profile_picture) ?>" alt="Profile Picture" class="report-profile-pic">
+                            </td>
                             <td><?= htmlspecialchars($row['employee_name']) ?></td>
                             <td><?= htmlspecialchars($row['department']) ?></td>
                             <td><?= htmlspecialchars($row['leave_type']) ?></td>

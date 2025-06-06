@@ -1571,14 +1571,20 @@ $recent_requests = $conn->query('
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4 text-center">
+                                            <img src="${employee.profile_picture && employee.profile_picture !== 'default-avatar.png' ? employee.profile_picture : 'uploads/default-avatar.png'}" 
+                                                 alt="Profile Picture" class="img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                                            <h6 class="mb-1">${employee.name}</h6>
+                                            <p class="text-muted">${employee.employee_id}</p>
+                                        </div>
+                                        <div class="col-md-4">
                                             <h6>Employee Information</h6>
                                             <p><strong>Department:</strong> ${employee.department}</p>
                                             <p><strong>Job Title:</strong> ${employee.job_title}</p>
                                             <p><strong>Email:</strong> ${employee.email}</p>
                                             <p><strong>Contact:</strong> ${employee.contact_number}</p>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <h6>Leave Statistics</h6>
                                             <p><strong>Total Leaves:</strong> ${employee.total_leaves}</p>
                                             <p><strong>Approved:</strong> ${employee.approved_leaves}</p>
@@ -1638,15 +1644,94 @@ $recent_requests = $conn->query('
         function printSearchResults() {
             const content = document.getElementById('searchResultsContent').innerHTML;
             const printWindow = window.open('', '_blank');
+
+            // Extract employee data from the displayed content if possible, or refetch if necessary.
+            // For a better print layout, it's often easier to regenerate the content with print-specific structure.
+            // Assuming data is available from a global variable or can be fetched again.
+            // For now, let's restructure the existing HTML content for better printing.
+
+            let printContentHtml = '';
+            document.querySelectorAll('#searchResultsContent .card').forEach(card => {
+                const name = card.querySelector('.card-header h5').textContent;
+                const profilePicUrl = card.querySelector('.card-body img') ? card.querySelector('.card-body img').src : 'uploads/default-avatar.png';
+                // Extracting innerHTML might bring unwanted styles; let's try to extract content more cleanly
+                const employeeInfoDiv = card.querySelector('.card-body .row > div:nth-child(2)');
+                const leaveStatsDiv = card.querySelector('.card-body .row > div:nth-child(3)');
+                const leaveHistoryDiv = card.querySelector('.card-body .mt-3');
+
+                // Reconstruct the content with minimal and print-friendly HTML
+                let employeeInfoHtml = '<h5>Employee Information</h5>';
+                employeeInfoDiv.querySelectorAll('p').forEach(p => {
+                    employeeInfoHtml += '<p>' + p.innerHTML + '</p>';
+                });
+
+                let leaveStatsHtml = '<h5>Leave Statistics</h5>';
+                leaveStatsDiv.querySelectorAll('p').forEach(p => {
+                    leaveStatsHtml += '<p>' + p.innerHTML + '</p>';
+                });
+
+                let leaveHistoryHtml = '<h5>Recent Leave History</h5>';
+                 if (leaveHistoryDiv) { // Check if leave history exists
+                    leaveHistoryHtml += leaveHistoryDiv.innerHTML; // Assuming the table structure is print-friendly
+                 }
+
+
+                printContentHtml += `
+                    <div class="print-employee-section mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="${profilePicUrl}" alt="Profile Picture" class="print-profile-pic me-3">
+                            <div>
+                                <h4 class="mb-1">${name}</h4>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 print-info-block">
+                                ${employeeInfoHtml}
+                            </div>
+                            <div class="col-6 print-info-block">
+                                ${leaveStatsHtml}
+                            </div>
+                        </div>
+
+                        <div class="mt-3 print-history-block">
+                            ${leaveHistoryHtml}
+                        </div>
+                    </div>
+                    <div class="print-page-break"></div>
+                `;
+            });
+
             printWindow.document.write(`
                 <html>
                     <head>
-                        <title>Employee Search Results</title>
+                        <title>Employee Search Results Report</title>
                         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
                         <style>
-                            body { padding: 20px; }
+                            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #333; }
+                            .print-header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px; }
+                            .print-header h1 { margin: 0; color: #333; }
+                            .print-employee-section { margin-bottom: 30px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; background-color: #fff; }
+                            .print-profile-pic { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; margin-bottom: 15px; }
+                            .print-info-block, .print-history-block { padding: 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 15px; }
+                            .print-history-block table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                            .print-history-block th, .print-history-block td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            .print-history-block th { background-color: #f2f2f2; }
+                            h4, h5 { color: #555; margin-top: 0; margin-bottom: 10px; }
+                            p { margin-bottom: 5px; font-size: 0.95rem; line-height: 1.4; }
+                            .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; }
+                            .badge-approved { background-color: #d4edda; color: #155724; }
+                            .badge-pending { background-color: #fff3cd; color: #856404; }
+                            .badge-rejected { background-color: #f8d7da; color: #721c24; }
+                            .print-page-break { page-break-after: always; }
+                            .print-page-break:last-child { page-break-after: avoid; }
                             @media print {
                                 .no-print { display: none; }
+                                body { padding: 0; margin: 0; }
+                                .print-employee-section { box-shadow: none; border: 1px solid #000; }
+                                .print-info-block, .print-history-block { border: 1px solid #000; }
+                                .print-history-block table, .print-history-block th, .print-history-block td { border: 1px solid #000; }
+                                .print-header { border-bottom-color: #000; }
                             }
                         </style>
                     </head>
@@ -1655,11 +1740,19 @@ $recent_requests = $conn->query('
                             <button onclick="window.print()" class="btn btn-primary">Print</button>
                             <button onclick="window.close()" class="btn btn-secondary">Close</button>
                         </div>
-                        ${content}
+
+                        <div class="print-header">
+                            <h1>Employee Search Results</h1>
+                        </div>
+
+                        ${printContentHtml}
+
                     </body>
                 </html>
             `);
             printWindow.document.close();
+            // Optional: call print dialog automatically
+            // printWindow.print();
         }
 
         function exportSearchResults() {

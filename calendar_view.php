@@ -9,7 +9,7 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
 }
 
 // Get all approved leaves
-$sql = 'SELECT l.*, u.name as employee_name, lt.name as leave_type 
+$sql = 'SELECT l.*, u.name as employee_name, u.profile_picture, lt.name as leave_type 
         FROM leaves l 
         JOIN users u ON l.user_id = u.id 
         JOIN leave_types lt ON l.leave_type = lt.id 
@@ -309,11 +309,32 @@ if ($nextMonth > 12) {
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
         }
         
         .name-item:hover {
             background: #e3f2fd;
             transform: translateX(5px);
+        }
+        
+        .name-item img.profile-pic-modal {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+            border: 2px solid var(--primary);
+        }
+        
+        .name-item .employee-info {
+            flex-grow: 1;
+        }
+        
+        .name-item .employee-info strong {
+            display: block;
+            font-size: 1.1em;
+            color: var(--dark);
         }
         
         .leave-details p {
@@ -391,6 +412,15 @@ if ($nextMonth > 12) {
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="logo">LeaveManager</div>
+        <!-- Search container -->
+        <div class="search-container mb-3 px-3">
+            <div class="input-group">
+                <input type="text" id="globalSearch" class="form-control" placeholder="Search employee...">
+                <button class="btn btn-light" type="button" onclick="performSearch()">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link" href="admin_dashboard.php#dashboard">
@@ -554,6 +584,31 @@ if ($nextMonth > 12) {
 
     <div class="overlay" id="overlay"></div>
     
+    <!-- Search Results Modal -->
+    <div class="modal fade" id="searchResultsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Employee Search Results</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="searchResultsContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="printSearchResults()">
+                        <i class="bi bi-printer me-1"></i> Print
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="exportSearchResults()">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -588,7 +643,17 @@ if ($nextMonth > 12) {
                 leavesForDate.forEach(leave => {
                     const nameItem = document.createElement('div');
                     nameItem.className = 'name-item';
-                    nameItem.textContent = leave.employee_name;
+                    
+                    // Add profile picture
+                    const profilePicUrl = leave.profile_picture && leave.profile_picture !== 'default-avatar.png' ? leave.profile_picture : 'uploads/default-avatar.png';
+                    nameItem.innerHTML = `
+                        <img src="${profilePicUrl}" alt="Profile Picture" class="profile-pic-modal">
+                        <div class="employee-info">
+                            <strong>${leave.employee_name}</strong>
+                            <small>${leave.leave_type}</small>
+                        </div>
+                    `;
+                    
                     nameItem.onclick = () => showLeaveDetails(leave);
                     namesList.appendChild(nameItem);
                 });
@@ -602,6 +667,8 @@ if ($nextMonth > 12) {
         function hideNamesModal() {
             document.getElementById('namesModal').style.display = 'none';
             document.getElementById('overlay').style.display = 'none';
+            // Clear names list
+            document.getElementById('namesList').innerHTML = '';
         }
         
         // Function to show leave details
@@ -614,7 +681,7 @@ if ($nextMonth > 12) {
             document.getElementById('purpose').textContent = leave.purpose;
             
             document.getElementById('leaveDetails').style.display = 'block';
-            document.getElementById('namesModal').style.display = 'none';
+            document.getElementById('overlay').style.display = 'block';
         }
         
         // Function to hide leave details
@@ -628,6 +695,229 @@ if ($nextMonth > 12) {
             hideNamesModal();
             hideLeaveDetails();
         });
+
+        // --- Search Functionality ---
+        function performSearch() {
+            const searchTerm = document.getElementById('globalSearch').value.trim();
+            if (!searchTerm) return;
+
+            // Show loading state
+            const searchResultsContent = document.getElementById('searchResultsContent');
+            searchResultsContent.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+
+            // Fetch search results
+            fetch(`search_employee.php?term=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        searchResultsContent.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                        return;
+                    }
+
+                    let html = '';
+                    data.forEach(employee => {
+                        // Use the same structure as admin_dashboard.php search results
+                        html += `
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">${employee.name} (${employee.employee_id})</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- Profile picture column -->
+                                        <div class="col-md-4 text-center">
+                                            <img src="${employee.profile_picture && employee.profile_picture !== 'default-avatar.png' ? employee.profile_picture : 'uploads/default-avatar.png'}" 
+                                                 alt="Profile Picture" class="img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                                            <h6 class="mb-1">${employee.name}</h6>
+                                            <p class="text-muted">${employee.employee_id}</p>
+                                        </div>
+                                        <!-- Employee Information -->
+                                        <div class="col-md-4">
+                                            <h6>Employee Information</h6>
+                                            <p><strong>Department:</strong> ${employee.department}</p>
+                                            <p><strong>Job Title:</strong> ${employee.job_title}</p>
+                                            <p><strong>Email:</strong> ${employee.email}</p>
+                                            <p><strong>Contact:</strong> ${employee.contact_number}</p>
+                                        </div>
+                                        <!-- Leave Statistics -->
+                                        <div class="col-md-4">
+                                            <h6>Leave Statistics</h6>
+                                            <p><strong>Total Leaves:</strong> ${employee.total_leaves}</p>
+                                            <p><strong>Approved:</strong> ${employee.approved_leaves}</p>
+                                            <p><strong>Pending:</strong> ${employee.pending_leaves}</p>
+                                            <p><strong>Rejected:</strong> ${employee.rejected_leaves}</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <h6>Recent Leave History</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Type</th>
+                                                        <th>Start Date</th>
+                                                        <th>End Date</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${employee.recent_leaves.map(leave => `
+                                                        <tr>
+                                                            <td>${leave.type}</td>
+                                                            <td>${leave.start_date}</td>
+                                                            <td>${leave.end_date}</td>
+                                                            <td><span class="badge bg-${leave.status === 'approved' ? 'success' : leave.status === 'pending' ? 'warning' : 'danger'}">${leave.status}</span></td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    searchResultsContent.innerHTML = html || '<div class="alert alert-info">No results found</div>';
+                })
+                .catch(error => {
+                    searchResultsContent.innerHTML = '<div class="alert alert-danger">Error performing search</div>';
+                    console.error('Search error:', error);
+                });
+
+            // Show the modal
+            const searchModal = new bootstrap.Modal(document.getElementById('searchResultsModal'));
+            searchModal.show();
+        }
+
+        // Handle Enter key in search input
+        document.getElementById('globalSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        function printSearchResults() {
+            const content = document.getElementById('searchResultsContent').innerHTML;
+            const printWindow = window.open('', '_blank');
+
+            // Extract employee data from the displayed content if possible, or refetch if necessary.
+            // For a better print layout, it's often easier to regenerate the content with print-specific structure.
+            // Assuming data is available from a global variable or can be fetched again.
+            // For now, let's restructure the existing HTML content for better printing.
+
+            let printContentHtml = '';
+            document.querySelectorAll('#searchResultsContent .card').forEach(card => {
+                const name = card.querySelector('.card-header h5').textContent;
+                const profilePicUrl = card.querySelector('.card-body img') ? card.querySelector('.card-body img').src : 'uploads/default-avatar.png';
+                // Extracting innerHTML might bring unwanted styles; let's try to extract content more cleanly
+                const employeeInfoDiv = card.querySelector('.card-body .row > div:nth-child(2)');
+                const leaveStatsDiv = card.querySelector('.card-body .row > div:nth-child(3)');
+                const leaveHistoryDiv = card.querySelector('.card-body .mt-3');
+
+                // Reconstruct the content with minimal and print-friendly HTML
+                let employeeInfoHtml = '<h5>Employee Information</h5>';
+                if (employeeInfoDiv) {
+                    employeeInfoDiv.querySelectorAll('p').forEach(p => {
+                        employeeInfoHtml += '<p>' + p.innerHTML + '</p>';
+                    });
+                }
+
+                let leaveStatsHtml = '<h5>Leave Statistics</h5>';
+                if (leaveStatsDiv) {
+                    leaveStatsDiv.querySelectorAll('p').forEach(p => {
+                        leaveStatsHtml += '<p>' + p.innerHTML + '</p>';
+                    });
+                }
+
+                let leaveHistoryHtml = '<h5>Recent Leave History</h5>';
+                 if (leaveHistoryDiv) { // Check if leave history exists
+                    leaveHistoryHtml += leaveHistoryDiv.innerHTML; // Assuming the table structure is print-friendly
+                 }
+
+                printContentHtml += `
+                    <div class="print-employee-section mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="${profilePicUrl}" alt="Profile Picture" class="print-profile-pic me-3">
+                            <div>
+                                <h4 class="mb-1">${name}</h4>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 print-info-block">
+                                ${employeeInfoHtml}
+                            </div>
+                            <div class="col-6 print-info-block">
+                                ${leaveStatsHtml}
+                            </div>
+                        </div>
+
+                        <div class="mt-3 print-history-block">
+                            ${leaveHistoryHtml}
+                        </div>
+                    </div>
+                    <div class="print-page-break"></div>
+                `;
+            });
+
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Employee Search Results Report</title>
+                        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+                        <style>
+                            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #333; }
+                            .print-header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px; }
+                            .print-header h1 { margin: 0; color: #333; }
+                            .print-employee-section { margin-bottom: 30px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; background-color: #fff; }
+                            .print-profile-pic { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; margin-bottom: 15px; }
+                            .print-info-block, .print-history-block { padding: 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 15px; }
+                            .print-history-block table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                            .print-history-block th, .print-history-block td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            .print-history-block th { background-color: #f2f2f2; }
+                            h4, h5 { color: #555; margin-top: 0; margin-bottom: 10px; }
+                            p { margin-bottom: 5px; font-size: 0.95rem; line-height: 1.4; }
+                            .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; }
+                            .badge-approved { background-color: #d4edda; color: #155724; }
+                            .badge-pending { background-color: #fff3cd; color: #856404; }
+                            .badge-rejected { background-color: #f8d7da; color: #721c24; }
+                            .print-page-break { page-break-after: always; }
+                            .print-page-break:last-child { page-break-after: avoid; }
+                            @media print {
+                                .no-print { display: none; }
+                                body { padding: 0; margin: 0; }
+                                .print-employee-section { box-shadow: none; border: 1px solid #000; }
+                                .print-info-block, .print-history-block { border: 1px solid #000; }
+                                .print-history-block table, .print-history-block th, .print-history-block td { border: 1px solid #000; }
+                                .print-header { border-bottom-color: #000; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="no-print mb-3">
+                            <button onclick="window.print()" class="btn btn-primary">Print</button>
+                            <button onclick="window.close()" class="btn btn-secondary">Close</button>
+                        </div>
+
+                        <div class="print-header">
+                            <h1>Employee Search Results</h1>
+                        </div>
+
+                        ${printContentHtml}
+
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            // Optional: call print dialog automatically
+            // printWindow.print();
+        }
+
+        function exportSearchResults() {
+            const searchTerm = document.getElementById('globalSearch').value.trim();
+            window.location.href = `export_search_results.php?term=${encodeURIComponent(searchTerm)}`;
+        }
     </script>
 </body>
 </html>
