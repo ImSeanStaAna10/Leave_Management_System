@@ -2,7 +2,6 @@
 session_start();
 include 'db.php';
 
-
 // Check if user is admin
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
     header('Location: login.html');
@@ -45,91 +44,110 @@ if ($nextMonth > 12) {
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leave Calendar</title>
-    <link rel="stylesheet" href="styles.css">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
     <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --sidebar-width: 250px;
+            --header-height: 60px;
+        }
+        
         body {
-            background: #f5f7fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fb;
+            overflow-x: hidden;
         }
-
-        .dashboard-container {
-            display: flex;
-            height: 100vh; /* Full viewport height */
-            width: 100%;
-        }
-
+        
+        /* Sidebar styles */
         .sidebar {
-            width: 200px; /* Fixed width */
-            background-color: #f0f0f0; /* Light grey background */
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1); /* Subtle shadow on the right */
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            border-right: 1px solid black; /* Added black border on the right */
-        }
-
-        .sidebar a {
-            display: block;
-            padding: 10px;
-            background-color: #fff; /* White background for links */
-            border: 1px solid #ddd; /* Added border */
-            border-radius: 4px;
-            text-decoration: none;
-            color: #333;
-            text-align: center;
-            transition: background-color 0.2s ease, border-color 0.2s ease; /* Added border-color to transition */
-        }
-
-        .sidebar a:hover {
-            background-color: #eee; /* Slightly darker on hover */
-            border-color: #ccc; /* Darker border on hover */
-        }
-
-        .sidebar a.active {
-            background-color: #111; /* Black background for active */
-            color: #fff; /* White text for active */
-            border-color: #111; /* Dark border for active */
-        }
-
-        .main-content {
-            flex: 1; /* Take remaining width */
-            padding: 20px;
-            overflow-y: auto; /* Add scrolling if content exceeds height */
-            width: calc(100% - 200px); /* Adjust width based on sidebar */
-        }
-
-        .logout-link {
-            display: inline-block;
-            padding: 10px 20px;
-            background: #e74c3c;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            color: white;
+            padding-top: var(--header-height);
+            z-index: 100;
+            box-shadow: 3px 0 10px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-            
-
-        .logout-link:hover {
-            background: #c0392b;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            margin: 5px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
         }
-
+        
+        .sidebar .nav-link:hover, 
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.15);
+            text-decoration: none;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .sidebar .logo {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            height: var(--header-height);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: var(--sidebar-width);
+            z-index: 99;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Calendar styles */
         .calendar-container {
-            max-width: 1200px;
-            margin: 20px auto;
-            background: #fff;
-            padding: 30px;
+            margin-top: 80px;
+            background: white;
             border-radius: 15px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 25px;
         }
-
+        
         .calendar-header {
             display: flex;
             justify-content: space-between;
@@ -138,57 +156,40 @@ if ($nextMonth > 12) {
             padding-bottom: 20px;
             border-bottom: 2px solid #f0f0f0;
         }
-
+        
         .calendar-title {
-            font-size: 2em;
+            font-size: 1.8rem;
             font-weight: 700;
-            color: #2c3e50;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            color: var(--dark);
         }
-
+        
         .calendar-nav {
             display: flex;
-            gap: 12px;
+            gap: 10px;
         }
-
-        .calendar-nav a {
-            padding: 10px 20px;
-            background: #2c3e50;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+        
+        .calendar-nav .btn {
+            padding: 8px 20px;
             font-weight: 600;
-            font-size: 0.95em;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
-        .calendar-nav a:hover {
-            background: #34495e;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-
+        
         .calendar {
             width: 100%;
             border-collapse: separate;
             border-spacing: 8px;
             margin-top: 20px;
         }
-
+        
         .calendar th {
-            background: #3498db;
-            color: #fff;
+            background: var(--primary);
+            color: white;
             padding: 15px;
             text-align: center;
             font-weight: 600;
             border-radius: 8px;
             font-size: 1.1em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
-
+        
         .calendar td {
             border: none;
             padding: 15px;
@@ -199,53 +200,48 @@ if ($nextMonth > 12) {
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             transition: all 0.3s ease;
             cursor: pointer;
+            position: relative;
         }
-
+        
         .calendar td:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-
+        
         .calendar td.other-month {
             background: #f8f9fa;
             color: #adb5bd;
             cursor: default;
         }
-
+        
         .calendar td.today {
             background: #fff3e0;
             border: 2px solid #ff9800;
         }
-
-        .calendar td > div:first-child {
-            font-size: 1.2em;
+        
+        .calendar-day {
+            position: absolute;
+            top: 10px;
+            right: 10px;
             font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 8px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #f0f0f0;
+            font-size: 1.2rem;
+            color: var(--dark);
         }
-
-        .leave-event {
+        
+        .leave-count {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
             background: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            padding: 8px 12px;
-            margin: 4px 0;
-            border-radius: 4px;
-            font-size: 0.9em;
             color: #1976d2;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
-
-        .leave-event:hover {
-            background: #bbdefb;
-            transform: translateX(2px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-        }
-
-        .leave-details {
+        
+        /* Modal styles */
+        .names-modal, .leave-details {
             display: none;
             position: fixed;
             top: 50%;
@@ -259,52 +255,35 @@ if ($nextMonth > 12) {
             max-width: 450px;
             width: 90%;
         }
-
-        .leave-details h3 {
-            margin: 0 0 20px 0;
-            color: #2c3e50;
-            font-size: 1.5em;
-            font-weight: 700;
+        
+        .modal-header {
             padding-bottom: 15px;
             border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 20px;
         }
-
-        .leave-details p {
-            margin: 12px 0;
-            color: #34495e;
-            font-size: 1.1em;
-            display: flex;
-            align-items: center;
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
         }
-
-        .leave-details p strong {
-            min-width: 120px;
-            color: #7f8c8d;
-        }
-
-        .leave-details .close-btn {
+        
+        .close-btn {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 20px;
+            right: 20px;
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 1.5rem;
             cursor: pointer;
             color: #95a5a6;
             transition: color 0.2s;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
         }
-
-        .leave-details .close-btn:hover {
+        
+        .close-btn:hover {
             color: #e74c3c;
-            background: #f8f9fa;
         }
-
+        
         .overlay {
             display: none;
             position: fixed;
@@ -316,229 +295,260 @@ if ($nextMonth > 12) {
             backdrop-filter: blur(3px);
             z-index: 999;
         }
-
-        /* Names Modal */
-        .names-modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #fff;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 1000;
-            max-width: 400px;
-            width: 90%;
-        }
-
-        .names-modal h3 {
-            margin: 0 0 20px 0;
-            color: #2c3e50;
-            font-size: 1.3em;
-            font-weight: 700;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
+        
         .names-list {
             max-height: 300px;
             overflow-y: auto;
             padding-right: 10px;
         }
-
-        .names-list::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .names-list::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-
-        .names-list::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
-        }
-
-        .names-list::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-
+        
         .name-item {
-            padding: 10px 15px;
-            margin: 5px 0;
+            padding: 12px 15px;
+            margin: 8px 0;
             background: #f8f9fa;
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
-
+        
         .name-item:hover {
             background: #e3f2fd;
             transform: translateX(5px);
         }
-
-        .names-modal .close-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #95a5a6;
-            transition: color 0.2s;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
+        
+        .leave-details p {
+            margin: 15px 0;
+            font-size: 1.1rem;
         }
-
-        .names-modal .close-btn:hover {
-            color: #e74c3c;
-            background: #f8f9fa;
+        
+        .leave-details p strong {
+            display: inline-block;
+            min-width: 120px;
+            color: #6c757d;
         }
-
+        
+        /* Logout button */
+        .logout-link {
+            padding: 8px 20px;
+            background: #e74c3c;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .logout-link:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+        
         /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .header {
+                left: 0;
+            }
+        }
+        
         @media (max-width: 768px) {
-            .calendar-container {
-                padding: 15px;
-                margin: 10px;
-            }
-
-            .calendar-title {
-                font-size: 1.5em;
-            }
-
-            .calendar-nav {
-                flex-direction: column;
-            }
-
-            .calendar th {
-                padding: 10px;
-                font-size: 0.9em;
-            }
-
             .calendar td {
                 height: 100px;
                 padding: 10px;
             }
-
-            .leave-event {
-                font-size: 0.8em;
-                padding: 6px 8px;
+            
+            .calendar-day {
+                font-size: 1rem;
+            }
+            
+            .leave-count {
+                font-size: 0.75rem;
+            }
+            
+            .calendar-title {
+                font-size: 1.5rem;
+            }
+            
+            .calendar-nav {
+                flex-wrap: wrap;
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <div class="sidebar">
-            <a href="admin_dashboard.php#dashboard">Dashboard</a>
-            <a href="admin_dashboard.php#employee-list">Employee List</a>
-            <a href="admin_dashboard.php#request-list">Leave Requests</a>
-            <a href="admin_dashboard.php#leave-types">Leave Types</a>
-            <a href="calendar_view.php" class="active">Calendar View</a>
-            <a href="reports.php">Reports & Analytics</a>
-        </div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">LeaveManager</div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="admin_dashboard.php#dashboard">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="admin_dashboard.php#employee-list">
+                    <i class="bi bi-people"></i> Employees
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="admin_dashboard.php#request-list">
+                    <i class="bi bi-list-check"></i> Leave Requests
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="admin_dashboard.php#leave-types">
+                    <i class="bi bi-card-list"></i> Leave Types
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="calendar_view.php">
+                    <i class="bi bi-calendar"></i> Calendar View
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="reports.php">
+                    <i class="bi bi-bar-chart"></i> Reports
+                </a>
+            </li>
+            <li class="nav-item mt-4">
+                <a class="nav-link" href="logout.php">
+                    <i class="bi bi-box-arrow-left"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </div>
 
-        <div class="main-content">
-            <div style="text-align:right; margin-bottom: 20px;">
-                <a href="logout.php" class="logout-link">Logout</a>
+    <!-- Header -->
+    <div class="header">
+        <button class="btn d-lg-none" type="button" id="sidebarToggle">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                <i class="bi bi-person-circle fs-4"></i>
             </div>
+            <div>
+                <div class="fw-bold">Admin</div>
+            </div>
+        </div>
+        <div>
+            <a href="logout.php" class="logout-link">
+                <i class="bi bi-box-arrow-right me-1"></i> Logout
+            </a>
+        </div>
+    </div>
 
-            <div class="calendar-container">
-                <div class="calendar-header">
-                    <div class="calendar-title"><?= $monthName . ' ' . $year ?></div>
-                    <div class="calendar-nav">
-                        <a href="?month=<?= $prevMonth ?>&year=<?= $prevYear ?>">Previous</a>
-                        <a href="?month=<?= date('m') ?>&year=<?= date('Y') ?>">Current</a>
-                        <a href="?month=<?= $nextMonth ?>&year=<?= $nextYear ?>">Next</a>
-                    </div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <h2 class="calendar-title"><?= $monthName . ' ' . $year ?></h2>
+                <div class="calendar-nav">
+                    <a href="?month=<?= $prevMonth ?>&year=<?= $prevYear ?>" class="btn btn-primary">
+                        <i class="bi bi-chevron-left me-1"></i> Previous
+                    </a>
+                    <a href="?month=<?= date('m') ?>&year=<?= date('Y') ?>" class="btn btn-outline-secondary">
+                        Current Month
+                    </a>
+                    <a href="?month=<?= $nextMonth ?>&year=<?= $nextYear ?>" class="btn btn-primary">
+                        Next <i class="bi bi-chevron-right ms-1"></i>
+                    </a>
                 </div>
-
-                <table class="calendar">
-                    <thead>
-                        <tr>
-                            <th>Sunday</th>
-                            <th>Monday</th>
-                            <th>Tuesday</th>
-                            <th>Wednesday</th>
-                            <th>Thursday</th>
-                            <th>Friday</th>
-                            <th>Saturday</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        $currentDay = 1;
-                        $currentDate = date('Y-m-d');
+            </div>
+            
+            <table class="calendar">
+                <thead>
+                    <tr>
+                        <th>Sunday</th>
+                        <th>Monday</th>
+                        <th>Tuesday</th>
+                        <th>Wednesday</th>
+                        <th>Thursday</th>
+                        <th>Friday</th>
+                        <th>Saturday</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $currentDay = 1;
+                    $currentDate = date('Y-m-d');
+                    
+                    // Create the calendar
+                    for ($i = 0; $i < 6; $i++) {
+                        echo "<tr>";
                         
-                        // Create the calendar
-                        for ($i = 0; $i < 6; $i++) {
-                            echo "<tr>";
-                            
-                            for ($j = 0; $j < 7; $j++) {
-                                if (($i === 0 && $j < $dayOfWeek) || ($currentDay > $numberDays)) {
-                                    // Previous or next month days
-                                    echo "<td class='other-month'></td>";
-                                } else {
-                                    $date = sprintf('%04d-%02d-%02d', $year, $month, $currentDay);
-                                    $isToday = ($date === $currentDate);
+                        for ($j = 0; $j < 7; $j++) {
+                            if (($i === 0 && $j < $dayOfWeek) || ($currentDay > $numberDays)) {
+                                // Previous or next month days
+                                echo "<td class='other-month'></td>";
+                            } else {
+                                $date = sprintf('%04d-%02d-%02d', $year, $month, $currentDay);
+                                $isToday = ($date === $currentDate);
+                                
+                                echo "<td" . ($isToday ? " class='today'" : "") . " onclick='showNamesForDate(\"$date\")'>";
+                                echo "<div class='calendar-day'>" . $currentDay . "</div>";
+                                
+                                // Store leaves for this day in a data attribute
+                                $leavesForDay = [];
+                                $result->data_seek(0);
+                                while ($leave = $result->fetch_assoc()) {
+                                    $startDate = new DateTime($leave['start_date']);
+                                    $endDate = new DateTime($leave['end_date']);
+                                    $currentDateObj = new DateTime($date);
                                     
-                                    echo "<td" . ($isToday ? " class='today'" : "") . " onclick='showNamesForDate(\"$date\")'>";
-                                    echo "<div style='font-weight:bold; margin-bottom:5px;'>" . $currentDay . "</div>";
-                                    
-                                    // Store leaves for this day in a data attribute
-                                    $leavesForDay = [];
-                                    $result->data_seek(0);
-                                    while ($leave = $result->fetch_assoc()) {
-                                        $startDate = new DateTime($leave['start_date']);
-                                        $endDate = new DateTime($leave['end_date']);
-                                        $currentDateObj = new DateTime($date);
-                                        
-                                        if ($currentDateObj >= $startDate && $currentDateObj <= $endDate) {
-                                            $leavesForDay[] = $leave;
-                                        }
+                                    if ($currentDateObj >= $startDate && $currentDateObj <= $endDate) {
+                                        $leavesForDay[] = $leave;
                                     }
-                                    
-                                    if (!empty($leavesForDay)) {
-                                        echo "<div class='leave-count'>" . count($leavesForDay) . " on leave</div>";
-                                    }
-                                    
-                                    echo "</td>";
-                                    $currentDay++;
                                 }
-                            }
-                            
-                            echo "</tr>";
-                            
-                            if ($currentDay > $numberDays) {
-                                break;
+                                
+                                if (!empty($leavesForDay)) {
+                                    echo "<div class='leave-count'>" . count($leavesForDay) . " on leave</div>";
+                                }
+                                
+                                echo "</td>";
+                                $currentDay++;
                             }
                         }
-                        ?>
-                    </tbody>
-                </table>
-            </div>
+                        
+                        echo "</tr>";
+                        
+                        if ($currentDay > $numberDays) {
+                            break;
+                        }
+                    }
+                    ?>
+                </tbody>
+            </table>
         </div>
     </div>
 
     <!-- Names Modal -->
     <div class="names-modal" id="namesModal">
-        <button class="close-btn" onclick="hideNamesModal()">&times;</button>
-        <h3>Employees on Leave</h3>
+        <div class="modal-header">
+            <h3 class="modal-title">Employees on Leave</h3>
+            <button class="close-btn" onclick="hideNamesModal()">&times;</button>
+        </div>
         <div class="names-list" id="namesList"></div>
     </div>
 
-    <div class="overlay" id="overlay"></div>
+    <!-- Leave Details Modal -->
     <div class="leave-details" id="leaveDetails">
-        <button class="close-btn" onclick="hideLeaveDetails()">&times;</button>
-        <h3>Leave Details</h3>
+        <div class="modal-header">
+            <h3 class="modal-title">Leave Details</h3>
+            <button class="close-btn" onclick="hideLeaveDetails()">&times;</button>
+        </div>
         <p><strong>Employee:</strong> <span id="employeeName"></span></p>
         <p><strong>Leave Type:</strong> <span id="leaveType"></span></p>
         <p><strong>Start Date:</strong> <span id="startDate"></span></p>
@@ -547,7 +557,16 @@ if ($nextMonth > 12) {
         <p><strong>Purpose:</strong> <span id="purpose"></span></p>
     </div>
 
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Toggle sidebar on mobile
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('show');
+        });
+        
         // Store all leaves data
         const leavesData = <?php 
             $result->data_seek(0);
@@ -557,7 +576,8 @@ if ($nextMonth > 12) {
             }
             echo json_encode($leaves);
         ?>;
-
+        
+        // Function to show employees on leave for a specific date
         function showNamesForDate(date) {
             const leavesForDate = leavesData.filter(leave => {
                 const startDate = new Date(leave.start_date);
@@ -565,7 +585,7 @@ if ($nextMonth > 12) {
                 const currentDate = new Date(date);
                 return currentDate >= startDate && currentDate <= endDate;
             });
-
+        
             if (leavesForDate.length > 0) {
                 const namesList = document.getElementById('namesList');
                 namesList.innerHTML = '';
@@ -577,17 +597,19 @@ if ($nextMonth > 12) {
                     nameItem.onclick = () => showLeaveDetails(leave);
                     namesList.appendChild(nameItem);
                 });
-
+        
                 document.getElementById('namesModal').style.display = 'block';
                 document.getElementById('overlay').style.display = 'block';
             }
         }
-
+        
+        // Function to hide the names modal
         function hideNamesModal() {
             document.getElementById('namesModal').style.display = 'none';
             document.getElementById('overlay').style.display = 'none';
         }
-
+        
+        // Function to show leave details
         function showLeaveDetails(leave) {
             document.getElementById('employeeName').textContent = leave.employee_name;
             document.getElementById('leaveType').textContent = leave.leave_type;
@@ -599,12 +621,13 @@ if ($nextMonth > 12) {
             document.getElementById('leaveDetails').style.display = 'block';
             document.getElementById('namesModal').style.display = 'none';
         }
-
+        
+        // Function to hide leave details
         function hideLeaveDetails() {
             document.getElementById('leaveDetails').style.display = 'none';
             document.getElementById('overlay').style.display = 'none';
         }
-
+        
         // Close modals when clicking outside
         document.getElementById('overlay').addEventListener('click', function() {
             hideNamesModal();
@@ -612,4 +635,4 @@ if ($nextMonth > 12) {
         });
     </script>
 </body>
-</html> 
+</html>

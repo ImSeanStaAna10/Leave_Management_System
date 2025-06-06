@@ -381,1427 +381,1201 @@ $recent_requests = $conn->query('
 ');
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    .leave-boxes { display: flex; flex-wrap: wrap; gap: 18px; }
-    .leave-box {
-      border: 1.5px solid #bbb;
-      border-radius: 8px;
-      padding: 18px 20px 38px 20px;
-      background: #fff;
-      min-width: 260px;
-      max-width: 320px;
-      flex: 1 1 260px;
-      cursor: pointer;
-      position: relative;
-      transition: box-shadow 0.2s, border 0.2s;
-    }
-    .leave-box:hover { box-shadow: 0 4px 16px #0001; border: 1.5px solid #111; }
-    .leave-box .actions { position: absolute; right: 18px; bottom: 14px; display: flex; gap: 8px; }
-    .leave-box .actions a {
-      background: #111;
-      color: #fff !important;
-      padding: 4px 14px;
-      border-radius: 4px;
-      font-size: 14px;
-      text-decoration: none;
-      font-weight: 600;
-      transition: background 0.2s;
-      cursor: pointer;
-    }
-    .leave-box .actions a:hover { background: #333; }
-    .leave-box .status {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-    .status.pending { background: #fffbe6; color: #b59f00; border: 1px solid #b59f00; }
-    .status.approved { background: #e6ffed; color: #1a7f37; border: 1px solid #1a7f37; }
-    .status.rejected { background: #ffeaea; color: #c00; border: 1px solid #c00; }
-    .popup-bg {
-      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.25); z-index: 1000; align-items: center; justify-content: center;
-    }
-    .popup-bg.active { display: flex; }
-    .popup {
-      background: #fff; border-radius: 10px; padding: 32px 28px; min-width: 320px; max-width: 95vw;
-      box-shadow: 0 8px 32px #0002;
-      position: relative;
-    }
-    .popup h3 { margin-top: 0; }
-    .popup .close-btn {
-      position: absolute; top: 10px; right: 18px; font-size: 22px; color: #888; cursor: pointer;
-      background: none; border: none;
-    }
-    .popup table { margin: 0; }
-    .tab-btns { display: flex; gap: 18px; margin-bottom: 24px; }
-    .tab-btn { background: #fff; color: #111; border: 1.5px solid #bbb; border-radius: 6px; padding: 8px 32px; font-size: 1.1em; font-weight: 600; cursor: pointer; transition: background 0.2s, color 0.2s, border 0.2s; }
-    .tab-btn.active, .tab-btn:focus { background: #111; color: #fff; border: 1.5px solid #111; }
-    .employee-boxes {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      margin-top: 20px;
-    }
-    
-    .employee-box {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 0;
-      width: 250px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      overflow: hidden;
-      position: relative;
-    }
-    
-    .employee-box .top-section {
-      background: linear-gradient(to right, #6a82fb, #fc5c7d);
-      height: 70px;
-      position: relative;
-      margin-bottom: 35px;
-    }
-    
-    .employee-box .image-container {
-      width: 80px; /* Should match image size */
-      height: 80px; /* Should match image size */
-      border-radius: 50%;
-      position: absolute;
-      bottom: -40px; /* Should match image bottom */
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #fff; /* White background */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      border: 3px solid #fff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
-    .employee-box img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%; /* Ensure image is also rounded */
-    }
-    
-    .employee-box .details {
-      text-align: center;
-      padding: 8px 15px 15px 15px;
-    }
-    
-    .employee-box h3 {
-      margin: 0 0 4px 0;
-      color: #333;
-      font-size: 1em;
-    }
-    
-    .employee-box p {
-      margin: 4px 0; 
-      color: #666;
-      font-size: 0.9em;
-      padding-bottom: 6px; 
-      border-bottom: 1px solid #ccc;
-    }
-    
-    .employee-box .details p:nth-child(-n+2) {
-        padding-bottom: 6px; 
-        border-bottom: 1px solid #ccc; 
-    }
-
-    .employee-box p:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
-    }
-    
-    .employee-box .edit-icon {
-      position: absolute;
-      top: 5px; /* Adjusted position */
-      right: 5px; /* Adjusted position */
-      background: #111; /* Black background */
-      border-radius: 50%;
-      width: 20px; /* Adjusted size */
-      height: 20px; /* Adjusted size */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Adjusted shadow */
-      cursor: pointer;
-    }
-    
-    .employee-box .edit-icon span {
-      font-size: 12px; /* Adjusted font size */
-      color: #fff; /* White color for the icon */
-    }
-    
-    .add-employee-btn {
-      background: #333; /* Dark background */
-      color: white;
-      padding: 8px 16px; /* Reduced padding */
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-bottom: 20px;
-      transition: background 0.2s ease;
-      display: block;
-      width: fit-content; /* Set width to fit content */
-      text-align: right; /* Align text to the right */
-    }
-    
-    .add-employee-btn:hover {
-      background: #555; /* Slightly lighter dark for hover */
-    }
-    
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-    }
-    
-    .modal-content {
-      background: white;
-      width: 95%;
-      max-width: 1200px;
-      margin: 20px auto;
-      padding: 20px;
-      border-radius: 8px;
-      max-height: 95vh;
-      overflow-y: auto;
-      display: flex;
-      gap: 20px;
-      position: relative;
-      padding-top: 30px;
-    }
-    
-    .modal .close-btn {
-      position: absolute;
-      top: 1px !important;
-      right: 15px !important;
-      font-size: 22px;
-      color: #888;
-      cursor: pointer;
-      background: none;
-      border: none;
-      padding: 5px;
-      z-index: 1001;
-      width: fit-content;
-      height: fit-content;
-    }
-
-    .modal .close-btn:hover {
-      color: #555;
-    }
-    
-    .form-section {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .profile-picture-section {
-      width: 200px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      margin-top: 30px;
-      position: sticky;
-      top: 30px;
-    }
-    
-    .profile-picture-placeholder {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      background: #eee;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 60px;
-      color: #aaa;
-      overflow: hidden;
-    }
-
-    .profile-picture-placeholder img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    .profile-picture-section input[type="file"] {
-      display: block;
-      width: 120px; 
-      padding: 8px 12px;
-      border: none;
-      border-radius: 20px; 
-      background: linear-gradient(to right, #6a82fb, #fc5c7d); 
-      color: white; 
-      cursor: pointer;
-      text-align: center;
-      font-size: 0.9em;
-      transition: background 0.3s ease;
-    }
-
-    .profile-picture-section input[type="file"]:hover {
-        background: linear-gradient(to right, #5a71e1, #e84c6d);
-    }
-
-     .profile-picture-section input[type="file"]::file-selector-button {
-        display: none;
-     }
-    
-    .form-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    
-    .form-group {
-      flex: 1;
-      margin-bottom: 0;
-      position: relative;
-    }
-    
-    .form-group.full-width {
-      width: 100%;
-    }
-    
-    .form-group label {
-      display: block;
-      margin-bottom: 4px;
-      font-size: 0.9em;
-      color: #555;
-    }
-    
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      width: 100%;
-      padding: 6px 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 0.95em;
-      box-sizing: border-box; /* Include padding and border in element's total width and height */
-      vertical-align: top; /* Align elements to the top */
-    }
-    
-    .form-group textarea {
-      height: 60px;
-      resize: vertical;
-    }
-    
-    .form-actions {
-      margin-top: 20px;
-      text-align: right;
-    }
-    
-    .form-actions button {
-      margin-left: 10px;
-    }
-
-    /* Sidebar Styles */
-    .dashboard-container {
-        display: flex;
-        height: 100vh; /* Full viewport height */
-        width: 100%;
-    }
-
-    .sidebar {
-        width: 200px; /* Fixed width */
-        background-color: #f0f0f0; /* Light grey background */
-        padding: 20px;
-        box-shadow: 2px 0 5px rgba(0,0,0,0.1); /* Subtle shadow on the right */
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        border-right: 1px solid black; /* Added black border on the right */
-    }
-
-    .sidebar a {
-        display: block;
-        padding: 10px;
-        background-color: #fff; /* White background for links */
-        border: 1px solid #ddd; /* Added border */
-        border-radius: 4px;
-        text-decoration: none;
-        color: #333;
-        text-align: center;
-        transition: background-color 0.2s ease, border-color 0.2s ease; /* Added border-color to transition */
-    }
-
-    .sidebar a:hover {
-        background-color: #eee; /* Slightly darker on hover */
-        border-color: #ccc; /* Darker border on hover */
-    }
-
-    .sidebar a.active {
-        background-color: #111; /* Black background for active */
-        color: #fff; /* White text for active */
-        border-color: #111; /* Dark border for active */
-    }
-
-    .main-content {
-        flex: 1; /* Take remaining width */
-        padding: 20px;
-        overflow-y: auto; /* Add scrolling if content exceeds height */
-        width: calc(100% - 200px); /* Adjust width based on sidebar */
-    }
-
-    .password-input-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-    
-    .password-input-wrapper input {
-      padding-right: 30px;
-    }
-    
-    .error-icon {
-      position: absolute;
-      right: 8px;
-      color: #dc3545;
-      display: none;
-      font-size: 16px;
-    }
-    
-    .error-icon.show {
-      display: block;
-    }
-
-    .profile-picture-placeholder {
-        border: 2px solid #ddd;
-        transition: border-color 0.3s ease;
-    }
-
-    .profile-picture-placeholder.error {
-        border: 2px solid red;
-    }
-
-  </style>
-  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --sidebar-width: 250px;
+            --header-height: 60px;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fb;
+            overflow-x: hidden;
+        }
+        
+        /* Sidebar styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            color: white;
+            padding-top: var(--header-height);
+            z-index: 100;
+            box-shadow: 3px 0 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            margin: 5px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar .nav-link:hover, 
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.15);
+            text-decoration: none;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .sidebar .logo {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            height: var(--header-height);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: var(--sidebar-width);
+            z-index: 99;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Dashboard cards */
+        .dashboard-card {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+            height: 100%;
+            color: white;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .dashboard-card .card-body {
+            padding: 20px;
+        }
+        
+        .dashboard-card .card-title {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .dashboard-card .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .dashboard-card .card-icon {
+            font-size: 2.5rem;
+            opacity: 0.8;
+        }
+        
+        /* Custom table styling */
+        .custom-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .custom-table thead th {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+        
+        .custom-table tbody tr {
+            transition: background 0.2s;
+        }
+        
+        .custom-table tbody tr:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        .custom-table tbody td {
+            padding: 15px 20px;
+            border-top: 1px solid #edf2f9;
+        }
+        
+        /* Employee cards */
+        .employee-card {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            background: white;
+        }
+        
+        .employee-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        .employee-card .card-header {
+            height: 100px;
+            background: linear-gradient(120deg, var(--primary), var(--secondary));
+            position: relative;
+            margin-bottom: 60px;
+            border: none;
+        }
+        
+        .employee-card .profile-img {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            position: absolute;
+            bottom: -45px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 4px solid white;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.2);
+        }
+        
+        .employee-card .profile-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .employee-card .card-body {
+            padding: 25px 15px 15px;
+            text-align: center;
+        }
+        
+        .employee-card .employee-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .employee-card .employee-title {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .employee-card .employee-contact {
+            font-size: 0.9rem;
+            color: #495057;
+        }
+        
+        /* Status badges */
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .badge-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Leave boxes */
+        .leave-box {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .leave-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+        
+        .leave-box .employee-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .leave-box .leave-type {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .leave-box .leave-dates {
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .header {
+                left: 0;
+            }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Action buttons */
+        .btn-action {
+            padding: 5px 12px;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+        
+        .btn-approve {
+            background: #28a745;
+            color: white;
+            border: none;
+        }
+        
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+            border: none;
+        }
+        
+        /* Section titles */
+        .section-title {
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+            color: var(--dark);
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        /* Tab buttons */
+        .tab-btn {
+            background: #e9ecef;
+            border: none;
+            color: #495057;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Profile picture upload */
+        .profile-picture-placeholder {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        
+        .profile-picture-placeholder i {
+            font-size: 3rem;
+            color: #adb5bd;
+        }
+        
+        .profile-picture-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
 </head>
 <body>
-  <div class="dashboard-container">
+    <!-- Sidebar -->
     <div class="sidebar">
-      <!-- Sidebar content here -->
-      <a href="#dashboard" class="active">Dashboard</a>
-      <a href="#employee-list">Employee List</a>
-      <a href="#request-list">Leave Requests</a>
-      <a href="#leave-types" id="leaveTypesSidebarBtn">Leave Types</a>
-      <a href="calendar_view.php">Calendar View</a>
-       <a href="reports.php">Reports & Analytics</a>
+        <div class="logo">LeaveManager</div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="#dashboard">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#employee-list">
+                    <i class="bi bi-people"></i> Employees
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#request-list">
+                    <i class="bi bi-list-check"></i> Leave Requests
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#leave-types">
+                    <i class="bi bi-card-list"></i> Leave Types
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="calendar_view.php">
+                    <i class="bi bi-calendar"></i> Calendar View
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="reports.php">
+                    <i class="bi bi-bar-chart"></i> Reports
+                </a>
+            </li>
+            <li class="nav-item mt-4">
+                <a class="nav-link" href="logout.php">
+                    <i class="bi bi-box-arrow-left"></i> Logout
+                </a>
+            </li>
+        </ul>
     </div>
-    
+
+    <!-- Header -->
+    <div class="header">
+        <button class="btn d-lg-none" type="button" id="sidebarToggle">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                <i class="bi bi-person-circle fs-4"></i>
+            </div>
+            <div>
+                <div class="fw-bold">Admin</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
     <div class="main-content">
-      <div style="text-align:right; margin-bottom: 20px;"><a href="logout.php" class="logout-link">Logout</a></div>
-
-      <!-- MOVE Leave Type box HERE -->
-      <div class="dashboard-box" id="leave-types" style="display:none; max-width:900px; margin:40px auto 0 auto; background:none; padding:0; border:none; border-radius:0; box-shadow:none;">
-        <div style="display: flex; align-items: center; gap: 18px; margin-bottom: 18px;">
-          <h2 style="margin-bottom: 0; color:#111; letter-spacing:1px; font-size:2rem; font-weight:700;">Leave Types</h2>
-          <button id="openAddLeaveTypeModalBtn" class="add-employee-btn" style="padding: 8px 16px; font-size: 1em; margin: 0; background: #333; color: #fff; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; text-align: center;">Add</button>
-        </div>
-        <table style="width: 100%; background: #fff; border-radius: 8px; overflow: hidden; table-layout: fixed;">
-          <thead style="background: #1976d2; color: #fff;">
-            <tr>
-              <th style="width: 30%;">Leave Type</th>
-              <th style="width: 15%;">Days</th>
-              <th style="width: 40%;">Description & Policy</th>
-              <th style="width: 15%;">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="leaveTypesTableBody">
-            <?php $leave_types_result = $conn->query('SELECT * FROM leave_types ORDER BY name'); while($lt = $leave_types_result->fetch_assoc()): ?>
-            <tr style="height: auto; min-height: 44px;">
-              <td><?= htmlspecialchars($lt['name']) ?></td>
-              <td><?= htmlspecialchars($lt['days']) ?></td>
-              <td style="white-space: pre-wrap;"><?= htmlspecialchars($lt['description']) ?></td>
-              <td><a href="?action=delete_leave_type&leave_type_id=<?= $lt['id'] ?>" onclick="return confirm('Are you sure you want to delete this leave type?');" style="color: red; text-decoration: none;">Delete</a></td>
-            </tr>
-            <?php endwhile; ?>
-          </tbody>
-        </table>
-        <!-- Add Leave Type Modal -->
-        <div id="addLeaveTypeModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.18); z-index:2000; align-items:center; justify-content:center;">
-          <div style="background:#fff; border:none; border-radius:10px; padding:32px 28px; min-width:320px; max-width:95vw; box-shadow:0 8px 32px #0002; position:relative;">
-            <button id="closeAddLeaveTypeModalBtn" style="position:absolute; top:10px; right:18px; font-size:22px; color:#888; cursor:pointer; background:none; border:none; padding:5px; z-index:1001; width:fit-content; height:fit-content;">&times;</button>
-            <h3 style="margin-top:0; color:#111;">Add Leave Type</h3>
-            <form id="addLeaveTypeForm" method="POST" action="add_leave_type.php" style="display:flex; flex-direction:column; gap:10px;">
-              <label for="leave_type_name">Leave Type:</label>
-              <input type="text" name="leave_type_name" id="leave_type_name" required>
-              <label for="leave_type_days">Days:</label>
-              <input type="number" name="leave_type_days" id="leave_type_days" min="1" required>
-              
-              <!-- Add Description Field Here -->
-              <label for="leave_type_description">Description & Policy:</label>
-              <textarea name="leave_type_description" id="leave_type_description" required
-                        placeholder="Enter detailed description and policy for this leave type."
-                        style="width: 100%; resize: vertical; min-height: 80px;"></textarea>
-              
-              <div style="display:flex; gap:16px; margin-top:18px; justify-content:center;">
-                <button type="submit" style="background:#333; color:#fff; border:none; border-radius:4px; padding:8px 16px; font-weight:600; font-size:1em; cursor:pointer;">Save</button>
-                <button type="button" id="cancelAddLeaveTypeModalBtn" style="background:#333; color:#fff; border:none; border-radius:4px; padding:8px 16px; font-weight:600; font-size:1em; cursor:pointer;">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <div class="dashboard-box" id="dashboard">
-        <h2>Dashboard</h2>
-        <div style="display: flex; gap: 20px; margin-bottom: 30px; justify-content: center;">
-          <div style="background: linear-gradient(135deg, #222 0%, #111 100%); border-radius: 8px; padding: 20px; min-width: 180px; text-align: center; color: #fff;">
-            <div style="font-size: 2.5em; font-weight: bold; color: #fff;"><?= $leave_types_count ?></div>
-            <div>Leave Types</div>
-          </div>
-          <div style="background: linear-gradient(135deg, #222 0%, #111 100%); border-radius: 8px; padding: 20px; min-width: 180px; text-align: center; color: #fff;">
-            <div style="font-size: 2.5em; font-weight: bold; color: #fff;"><?= $employees_count ?></div>
-            <div>Employees</div>
-          </div>
-          <div style="background: linear-gradient(135deg, #222 0%, #111 100%); border-radius: 8px; padding: 20px; min-width: 180px; text-align: center; color: #fff;">
-            <div style="font-size: 2.5em; font-weight: bold; color: #fff;"><?= $approved_count ?></div>
-            <div>Approved</div>
-          </div>
-          <div style="background: linear-gradient(135deg, #222 0%, #111 100%); border-radius: 8px; padding: 20px; min-width: 180px; text-align: center; color: #fff;">
-            <div style="font-size: 2.5em; font-weight: bold; color: #fff;"><?= $rejected_count ?></div>
-            <div>Rejected</div>
-          </div>
-          <div style="background: linear-gradient(135deg, #222 0%, #111 100%); border-radius: 8px; padding: 20px; min-width: 180px; text-align: center; color: #fff;">
-            <div style="font-size: 2.5em; font-weight: bold; color: #fff;"><?= $pending_count ?></div>
-            <div>Pending</div>
-          </div>
-        </div>
-        <h3>Recent request history</h3>
-        <div style="display: flex; justify-content: center; width: 100%;"><table style="width: 900px; background: #fff; border-radius: 8px; overflow: hidden; table-layout: fixed; margin: 0 auto;">
-          <thead style="background: #1976d2; color: #fff;">
-            <tr>
-              <th style="width: 120px;">Request Date</th>
-              <th style="width: 120px;">Employee</th>
-              <th style="width: 120px;">Leave Type</th>
-              <th style="width: 100px;">From</th>
-              <th style="width: 100px;">To</th>
-              <th style="width: 220px;">Reason</th>
-              <th style="width: 100px;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php while($row = $recent_requests->fetch_assoc()): ?>
-              <tr style="height: 44px;">
-                <td><?= htmlspecialchars(date('d-m-Y', strtotime($row['applied_at']))) ?></td>
-                <td><?= htmlspecialchars($row['employee']) ?></td>
-                <td><?= htmlspecialchars($row['leave_type']) ?></td>
-                <td><?= htmlspecialchars(date('d-m-Y', strtotime($row['start_date']))) ?></td>
-                <td><?= htmlspecialchars(date('d-m-Y', strtotime($row['end_date']))) ?></td>
-                <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor:pointer;" onclick="showReasonPopup(this)">
-                  <?= htmlspecialchars($row['purpose']) ?>
-                </td>
-                <td>
-                  <?php
-                    $status = strtolower($row['status']);
-                    $color = $status === 'approved' ? '#e6ffed' : ($status === 'rejected' ? '#ffeaea' : '#e3e3e3');
-                    $text = $status === 'approved' ? '#1a7f37' : ($status === 'rejected' ? '#c00' : '#b59f00');
-                  ?>
-                  <span style="background:<?= $color ?>;color:<?= $text ?>;padding:2px 10px;border-radius:12px;">
-                    <?= ucfirst($status) ?>
-                  </span>
-                </td>
-              </tr>
-            <?php endwhile; ?>
-          </tbody>
-        </table></div>
-      </div>
-
-      <div class="dashboard-box" id="employee-list">
-        <div style="display: flex; align-items: center; gap: 18px; margin-bottom: 18px;">
-          <h2 style="margin-bottom: 0; color:#111; letter-spacing:1px; font-size:2rem; font-weight:700;">Employee List</h2>
-          <button class="add-employee-btn" onclick="showAddEmployeeModal()" style="padding: 8px 16px; font-size: 1em; margin: 0; min-width: 80px; display: flex; align-items: center; justify-content: center; text-align: center;">Add</button>
-        </div>
-
-        <!-- Add Employee List Filter and Report Section -->
-        <div class="filter-section" style="margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <form id="employeeFilterForm" method="GET" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
-                <div class="form-group" style="flex: 1; min-width: 200px;">
-                    <label for="department_filter">Department:</label>
-                    <select name="department_filter" id="department_filter" class="filter-input">
-                        <option value="">All Departments</option>
-                        <?php
-                        // Fetch unique departments from users table
-                        $departments_query = $conn->query('SELECT DISTINCT department FROM users WHERE role = "employee" ORDER BY department');
-                        while($dept = $departments_query->fetch_assoc()):
-                        ?>
-                        <option value="<?= htmlspecialchars($dept['department']) ?>" <?= isset($_GET['department_filter']) && $_GET['department_filter'] === $dept['department'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($dept['department']) ?>
-                        </option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
-
-                <div class="form-actions" style="display: flex; gap: 10px;">
-                    <button type="submit" class="filter-btn" style="background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Apply Filter</button>
-                    <button type="button" onclick="resetEmployeeFilters()" class="filter-btn" style="background: #666; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Reset</button>
-                    <button type="button" onclick="exportEmployeeData('csv')" class="filter-btn" style="background: #28a745; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Export CSV</button>
-                    <button type="button" onclick="exportEmployeeData('pdf')" class="filter-btn" style="background: #dc3545; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Export PDF</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="employee-boxes">
-          <?php // Update this query to include department filter if applied
-          $employees_sql = 'SELECT * FROM users WHERE role = "employee"';
-          if (isset($_GET['department_filter']) && !empty($_GET['department_filter'])) {
-              $department_filter = $_GET['department_filter'];
-              $employees_sql .= " AND department = '$department_filter'"; // Note: Basic filtering, consider prepared statements for security if input comes from users.
-          }
-          $employees_sql .= ' ORDER BY name';
-          $employees_result = $conn->query($employees_sql);
-          
-          while($employee = $employees_result->fetch_assoc()): ?>
-            <div class="employee-box"
-              data-id="<?= htmlspecialchars($employee['id']) ?>"
-              data-employee_id="<?= htmlspecialchars($employee['employee_id']) ?>"
-              data-name="<?= htmlspecialchars($employee['name']) ?>"
-              data-email="<?= htmlspecialchars($employee['email']) ?>"
-              data-job_title="<?= htmlspecialchars($employee['job_title']) ?>"
-              data-contact_number="<?= htmlspecialchars($employee['contact_number']) ?>"
-              data-birthday="<?= htmlspecialchars($employee['birthday']) ?>"
-              data-department="<?= htmlspecialchars($employee['department']) ?>"
-              data-gender="<?= htmlspecialchars($employee['gender']) ?>"
-              data-date_of_joining="<?= htmlspecialchars($employee['date_of_joining']) ?>"
-              data-address="<?= htmlspecialchars($employee['address']) ?>"
-              data-role="<?= htmlspecialchars($employee['role']) ?>"
-              data-profile_picture="<?= htmlspecialchars($employee['profile_picture'] ?? '') ?>"
-            >
-              <div class="top-section">
-                <div class="image-container">
-                  <?php if (!empty($employee['profile_picture']) && file_exists($employee['profile_picture'])): ?>
-                    <img src="<?= htmlspecialchars($employee['profile_picture']) ?>" alt="Profile Picture">
-                  <?php else: ?>
-                    <div style="width: 100%; height: 100%; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #ccc;">&#128100;</div>
-                  <?php endif; ?>
-                </div>
-                <div class="edit-icon" onclick="openEditEmployeeModal(this)"><span>&#9998;</span></div>
-              </div>
-              <div class="details">
-                <h3><?= htmlspecialchars($employee['name']) ?></h3>
-                <p><?= htmlspecialchars($employee['job_title']) ?></p>
-                <p style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;"><?= htmlspecialchars($employee['email']) ?></p>
-                <p style="margin-top: 0; border-bottom: none; padding-bottom: 0;"><?= htmlspecialchars($employee['contact_number']) ?></p>
-              </div>
-            </div>
-          <?php endwhile; ?>
-        </div>
-      </div>
-
-      <div class="dashboard-box" id="request-list">
-        <h2>All Employee Leaves</h2>
-        
-        <!-- Add Filter Section -->
-        <div class="filter-section" style="margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <form id="filterForm" method="GET" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
-                <div class="form-group" style="flex: 1; min-width: 200px;">
-                    <label for="status_filter">Status:</label>
-                    <select name="status_filter" id="status_filter" class="filter-input">
-                        <option value="">All Status</option>
-                        <option value="pending" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'pending' ? 'selected' : '' ?>>Pending</option>
-                        <option value="approved" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'approved' ? 'selected' : '' ?>>Approved</option>
-                        <option value="rejected" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'rejected' ? 'selected' : '' ?>>Rejected</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" style="flex: 1; min-width: 200px;">
-                    <label for="date_from">From Date:</label>
-                    <input type="date" name="date_from" id="date_from" class="filter-input" value="<?= isset($_GET['date_from']) ? $_GET['date_from'] : '' ?>">
-                </div>
-                
-                <div class="form-group" style="flex: 1; min-width: 200px;">
-                    <label for="date_to">To Date:</label>
-                    <input type="date" name="date_to" id="date_to" class="filter-input" value="<?= isset($_GET['date_to']) ? $_GET['date_to'] : '' ?>">
-                </div>
-                
-                <div class="form-group" style="flex: 1; min-width: 200px;">
-                    <label for="employee_filter">Employee:</label>
-                    <select name="employee_filter" id="employee_filter" class="filter-input">
-                        <option value="">All Employees</option>
-                        <?php
-                        $employees = $conn->query('SELECT id, name FROM users WHERE role = "employee" ORDER BY name');
-                        while($emp = $employees->fetch_assoc()):
-                        ?>
-                        <option value="<?= $emp['id'] ?>" <?= isset($_GET['employee_filter']) && $_GET['employee_filter'] == $emp['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($emp['name']) ?>
-                        </option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
-                
-                <div class="form-group" style="flex: 1; min-width: 200px;">
-                    <label for="leave_type_filter">Leave Type:</label>
-                    <select name="leave_type_filter" id="leave_type_filter" class="filter-input">
-                        <option value="">All Types</option>
-                        <?php
-                        $leave_types = $conn->query('SELECT id, name FROM leave_types ORDER BY name');
-                        while($lt = $leave_types->fetch_assoc()):
-                        ?>
-                        <option value="<?= $lt['id'] ?>" <?= isset($_GET['leave_type_filter']) && $_GET['leave_type_filter'] == $lt['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($lt['name']) ?>
-                        </option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
-                
-                <div class="form-actions" style="display: flex; gap: 10px;">
-                    <button type="submit" class="filter-btn" style="background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Apply Filters</button>
-                    <button type="button" onclick="resetFilters()" class="filter-btn" style="background: #666; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Reset</button>
-                    <button type="button" onclick="exportToCSV()" class="filter-btn" style="background: #28a745; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Export CSV</button>
-                    <button type="button" onclick="exportToPDF()" class="filter-btn" style="background: #dc3545; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Export PDF</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="tab-btns">
-          <button class="tab-btn active" id="pendingTab" onclick="showTab('pending')">Pending</button>
-          <button class="tab-btn" id="historyTab" onclick="showTab('history')">History</button>
-        </div>
-        <div class="leave-boxes" id="pending-leaves">
-          <?php $leaves = [];
-          $pendingBoxes = '';
-          $historyBoxes = '';
-          while($row = $result->fetch_assoc()):
-            $leaves[$row['user_id']][] = $row;
-            ob_start(); ?>
-            <div class="leave-box" data-userid="<?= $row['user_id'] ?>" data-leaveid="<?= $row['id'] ?>" onclick="showHistory(<?= $row['user_id'] ?>, event)" data-status="<?= $row['status'] ?>">
-              <div style="font-weight:700; font-size:1.1em; margin-bottom:2px;"> <?= htmlspecialchars($row['name']) ?> </div>
-              <div style="font-size:0.98em; margin-bottom:4px;"> <?= htmlspecialchars($row['leave_type']) ?> </div>
-              <div class="status <?= htmlspecialchars($row['status']) ?>"> <?= htmlspecialchars(ucfirst($row['status'])) ?> </div>
-              <div style="font-size:0.95em; margin-bottom:22px;"> <?= htmlspecialchars($row['start_date']) ?> to <?= htmlspecialchars($row['end_date']) ?> (<?= htmlspecialchars($row['duration']) ?> days)</div>
-              <div class="actions" onclick="event.stopPropagation();">
-                <?php if($row['status'] === 'pending'): ?>
-                  <a href="?action=approve&leave_id=<?= $row['id'] ?>">Approve</a>
-                  <a href="?action=reject&leave_id=<?= $row['id'] ?>">Reject</a>
-                <?php else: ?>
-                  <span style="color:#888; font-size:13px;">-</span>
-                <?php endif; ?>
-              </div>
-            </div>
-          <?php $box = ob_get_clean();
-            if ($row['status'] === 'pending') $pendingBoxes .= $box;
-            else $historyBoxes .= $box;
-          endwhile; ?>
-          <?= $pendingBoxes ?>
-        </div>
-        <div class="leave-boxes" id="history-leaves" style="display:none;">
-          <?= $historyBoxes ?>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add Employee Modal -->
-  <div id="addEmployeeModal" class="modal">
-    <div class="modal-content">
-      <button class="close-btn" onclick="hideAddEmployeeModal()" aria-label="Close">&times;</button>
-      <div class="form-section">
-        <h2>Add New Employee</h2>
-        <form action="" method="POST" enctype="multipart/form-data" style="display: flex; gap: 20px;">
-          <div style="flex: 1;">
-            <input type="hidden" name="action" value="add_employee">
+        <!-- Dashboard Section -->
+        <div class="section" id="dashboard">
+            <h3 class="section-title"><i class="bi bi-speedometer2"></i> Dashboard Overview</h3>
             
-            <div class="form-row">
-              <div class="form-group">
-                <label>Employee ID</label>
-                <input type="text" name="employee_id" id="employee_id" autocomplete="off" required>
-              </div>
-              
-              <div class="form-group">
-                <label>Name</label>
-                <input type="text" name="name" id="name" autocomplete="name" required>
-              </div>
-              
-              <div class="form-group">
-                <label>Job Title</label>
-                <select name="job_title" id="job_title" autocomplete="organization-title" required>
-                  <option value="">Select Job Title</option>
-                  <option value="Software Engineer">Software Engineer</option>
-                  <option value="Project Manager">Project Manager</option>
-                  <option value="HR Manager">HR Manager</option>
-                  <option value="Accountant">Accountant</option>
-                  <option value="Marketing Specialist">Marketing Specialist</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Email</label>
-                <input type="email" name="email" id="email" autocomplete="email" required>
-              </div>
-              
-              <div class="form-group">
-                <label>Contact Number</label>
-                <input type="tel" name="contact_number" id="contact_number" autocomplete="tel" required>
-              </div>
-              
-              <div class="form-group">
-                <label>Birthday</label>
-                <input type="date" name="birthday" id="birthday" autocomplete="bday" required>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Department</label>
-                <select name="department" id="department" autocomplete="organization" required>
-                  <option value="">Select Department</option>
-                  <option value="IT">IT</option>
-                  <option value="HR">HR</option>
-                  <option value="Finance">Finance</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Operations">Operations</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label>Gender</label>
-                <select name="gender" id="gender" autocomplete="sex" required>
-                  <option value="">Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label>Date of Joining</label>
-                <input type="date" name="date_of_joining" id="date_of_joining" autocomplete="off" required>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Status</label>
-                <select name="status" id="status" autocomplete="off" required>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label>Password</label>
-                <div class="password-input-wrapper">
-                  <input type="password" name="password" id="password" autocomplete="new-password">
+            <div class="row mb-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="dashboard-card bg-primary">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="card-title">Leave Types</div>
+                                    <div class="card-value"><?= $leave_types_count ?></div>
+                                </div>
+                                <div class="card-icon">
+                                    <i class="bi bi-card-list"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              
-              <div class="form-group">
-                <label>Confirm Password</label>
-                <div class="password-input-wrapper">
-                  <input type="password" name="confirm_password" id="confirmPassword" autocomplete="new-password">
-                  <span class="error-icon" id="passwordErrorIcon">⚠️</span>
+                <div class="col-md-6 col-lg-3">
+                    <div class="dashboard-card bg-success">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="card-title">Employees</div>
+                                    <div class="card-value"><?= $employees_count ?></div>
+                                </div>
+                                <div class="card-icon">
+                                    <i class="bi bi-people"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group full-width">
-                <label>Address</label>
-                <textarea name="address" id="address" autocomplete="street-address" required></textarea>
-              </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="dashboard-card bg-info">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="card-title">Approved</div>
+                                    <div class="card-value"><?= $approved_count ?></div>
+                                </div>
+                                <div class="card-icon">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="dashboard-card bg-warning">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="card-title">Pending</div>
+                                    <div class="card-value"><?= $pending_count ?></div>
+                                </div>
+                                <div class="card-icon">
+                                    <i class="bi bi-clock-history"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <div class="form-row">
-              <div class="form-group full-width">
-                <input type="hidden" name="role" value="employee">
-              </div>
-            </div>
-
-            <?php if (isset($upload_error)): ?>
-              <div class="form-row">
-                <div class="form-group full-width">
-                  <div style="color: red; margin-top: 10px;"><?php echo htmlspecialchars($upload_error); ?></div>
+            <div class="card mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Leave Requests</h5>
                 </div>
-              </div>
-            <?php endif; ?>
-
-            <div class="form-actions">
-              <button type="submit" class="add-employee-btn">Add Employee</button>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Request Date</th>
+                                    <th>Employee</th>
+                                    <th>Leave Type</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php while($row = $recent_requests->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars(date('d-m-Y', strtotime($row['applied_at']))) ?></td>
+                                    <td><?= htmlspecialchars($row['employee']) ?></td>
+                                    <td><?= htmlspecialchars($row['leave_type']) ?></td>
+                                    <td><?= htmlspecialchars(date('d-m-Y', strtotime($row['start_date']))) ?></td>
+                                    <td><?= htmlspecialchars(date('d-m-Y', strtotime($row['end_date']))) ?></td>
+                                    <td>
+                                        <span class="d-inline-block text-truncate" style="max-width: 200px;" 
+                                              data-bs-toggle="tooltip" data-bs-title="<?= htmlspecialchars($row['purpose']) ?>">
+                                            <?= htmlspecialchars($row['purpose']) ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <?php
+                                            $status = strtolower($row['status']);
+                                            $badge_class = $status === 'pending' ? 'badge-pending' : 
+                                                          ($status === 'approved' ? 'badge-approved' : 'badge-rejected');
+                                        ?>
+                                        <span class="status-badge <?= $badge_class ?>">
+                                            <?= ucfirst($status) ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-          </div>
-
-          <div class="profile-picture-section">
-            <label>Profile Picture</label>
-            <div class="profile-picture-placeholder" id="profilePicturePlaceholder">&#128100;</div>
-            <input type="file" name="profile_picture" accept="image/*" id="profilePictureInput">
-          </div>
-        </form>
-      </div>
+        </div>
+        
+        <!-- Employee List Section -->
+        <div class="section" id="employee-list" style="display: none;">
+            <h3 class="section-title"><i class="bi bi-people"></i> Employee Management</h3>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Employee Directory</h5>
+                    <button class="btn btn-primary" onclick="showAddEmployeeModal()">
+                        <i class="bi bi-plus-lg me-1"></i> Add Employee
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <form id="employeeFilterForm" method="GET" class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Department</label>
+                                <select name="department_filter" id="department_filter" class="form-select">
+                                    <option value="">All Departments</option>
+                                    <?php
+                                    $departments_query = $conn->query('SELECT DISTINCT department FROM users WHERE role = "employee" ORDER BY department');
+                                    while($dept = $departments_query->fetch_assoc()):
+                                    ?>
+                                    <option value="<?= htmlspecialchars($dept['department']) ?>" 
+                                        <?= isset($_GET['department_filter']) && $_GET['department_filter'] === $dept['department'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($dept['department']) ?>
+                                    </option>
+                                    <?php endwhile; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">Apply</button>
+                                <button type="button" onclick="resetEmployeeFilters()" class="btn btn-outline-secondary me-2">Reset</button>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">Export</button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="exportEmployeeData('csv')">CSV</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="exportEmployeeData('pdf')">PDF</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="row">
+                        <?php
+                        $employees_sql = 'SELECT * FROM users WHERE role = "employee"';
+                        if (isset($_GET['department_filter']) && !empty($_GET['department_filter'])) {
+                            $department_filter = $_GET['department_filter'];
+                            $employees_sql .= " AND department = '$department_filter'";
+                        }
+                        $employees_sql .= ' ORDER BY name';
+                        $employees_result = $conn->query($employees_sql);
+                        
+                        while($employee = $employees_result->fetch_assoc()): ?>
+                        <div class="col-md-6 col-lg-4 col-xl-3">
+                            <div class="employee-card"
+                                data-id="<?= htmlspecialchars($employee['id']) ?>"
+                                data-employee_id="<?= htmlspecialchars($employee['employee_id']) ?>"
+                                data-name="<?= htmlspecialchars($employee['name']) ?>"
+                                data-email="<?= htmlspecialchars($employee['email']) ?>"
+                                data-job_title="<?= htmlspecialchars($employee['job_title']) ?>"
+                                data-contact_number="<?= htmlspecialchars($employee['contact_number']) ?>"
+                                data-birthday="<?= htmlspecialchars($employee['birthday']) ?>"
+                                data-department="<?= htmlspecialchars($employee['department']) ?>"
+                                data-gender="<?= htmlspecialchars($employee['gender']) ?>"
+                                data-date_of_joining="<?= htmlspecialchars($employee['date_of_joining']) ?>"
+                                data-address="<?= htmlspecialchars($employee['address']) ?>"
+                                data-role="<?= htmlspecialchars($employee['role']) ?>"
+                                data-profile_picture="<?= htmlspecialchars($employee['profile_picture'] ?? '') ?>">
+                                <div class="card-header">
+                                    <div class="profile-img">
+                                        <?php if (!empty($employee['profile_picture']) && file_exists($employee['profile_picture'])): ?>
+                                            <img src="<?= htmlspecialchars($employee['profile_picture']) ?>" alt="Profile Picture">
+                                        <?php else: ?>
+                                            <i class="bi bi-person-circle" style="font-size: 3rem; color: #6c757d;"></i>
+                                        <?php endif; ?>
+                                    </div>
+                                    <button class="btn btn-sm btn-light position-absolute top-0 end-0 m-2" 
+                                            onclick="openEditEmployeeModal(this)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="employee-name"><?= htmlspecialchars($employee['name']) ?></div>
+                                    <div class="employee-title"><?= htmlspecialchars($employee['job_title']) ?></div>
+                                    <div class="employee-contact">
+                                        <div><i class="bi bi-envelope me-2"></i><?= htmlspecialchars($employee['email']) ?></div>
+                                        <div class="mt-2"><i class="bi bi-telephone me-2"></i><?= htmlspecialchars($employee['contact_number']) ?></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endwhile; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Request List Section -->
+        <div class="section" id="request-list" style="display: none;">
+            <h3 class="section-title"><i class="bi bi-list-check"></i> Leave Requests</h3>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="pendingTab" onclick="showTab('pending')">Pending Requests</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="historyTab" onclick="showTab('history')">Request History</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <form id="filterForm" method="GET" class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Status</label>
+                                <select name="status_filter" id="status_filter" class="form-select">
+                                    <option value="">All Status</option>
+                                    <option value="pending" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'pending' ? 'selected' : '' ?>>Pending</option>
+                                    <option value="approved" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'approved' ? 'selected' : '' ?>>Approved</option>
+                                    <option value="rejected" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'rejected' ? 'selected' : '' ?>>Rejected</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">From Date</label>
+                                <input type="date" name="date_from" id="date_from" class="form-control" value="<?= isset($_GET['date_from']) ? $_GET['date_from'] : '' ?>">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">To Date</label>
+                                <input type="date" name="date_to" id="date_to" class="form-control" value="<?= isset($_GET['date_to']) ? $_GET['date_to'] : '' ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Employee</label>
+                                <select name="employee_filter" id="employee_filter" class="form-select">
+                                    <option value="">All Employees</option>
+                                    <?php
+                                    $employees = $conn->query('SELECT id, name FROM users WHERE role = "employee" ORDER BY name');
+                                    while($emp = $employees->fetch_assoc()):
+                                    ?>
+                                    <option value="<?= $emp['id'] ?>" <?= isset($_GET['employee_filter']) && $_GET['employee_filter'] == $emp['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($emp['name']) ?>
+                                    </option>
+                                    <?php endwhile; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Leave Type</label>
+                                <select name="leave_type_filter" id="leave_type_filter" class="form-select">
+                                    <option value="">All Types</option>
+                                    <?php
+                                    $leave_types = $conn->query('SELECT id, name FROM leave_types ORDER BY name');
+                                    while($lt = $leave_types->fetch_assoc()):
+                                    ?>
+                                    <option value="<?= $lt['id'] ?>" <?= isset($_GET['leave_type_filter']) && $_GET['leave_type_filter'] == $lt['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($lt['name']) ?>
+                                    </option>
+                                    <?php endwhile; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-12 d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary me-2">Apply Filters</button>
+                                <button type="button" onclick="resetFilters()" class="btn btn-outline-secondary me-2">Reset</button>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">Export</button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="exportToCSV()">CSV</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="exportToPDF()">PDF</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div id="pending-leaves">
+                        <div class="row">
+                            <?php 
+                            $pendingBoxes = '';
+                            $historyBoxes = '';
+                            while($row = $result->fetch_assoc()):
+                                ob_start(); ?>
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="leave-box" data-userid="<?= $row['user_id'] ?>" data-leaveid="<?= $row['id'] ?>" data-status="<?= $row['status'] ?>">
+                                        <div class="employee-name"><?= htmlspecialchars($row['name']) ?></div>
+                                        <div class="leave-type"><?= htmlspecialchars($row['leave_type']) ?></div>
+                                        <div class="leave-dates">
+                                            <i class="bi bi-calendar me-1"></i> 
+                                            <?= htmlspecialchars($row['start_date']) ?> to <?= htmlspecialchars($row['end_date']) ?>
+                                            <span class="badge bg-light text-dark ms-2"><?= htmlspecialchars($row['duration']) ?> days</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <?php
+                                                $status = strtolower($row['status']);
+                                                $badge_class = $status === 'pending' ? 'badge-pending' : 
+                                                              ($status === 'approved' ? 'badge-approved' : 'badge-rejected');
+                                            ?>
+                                            <span class="status-badge <?= $badge_class ?>">
+                                                <?= ucfirst($status) ?>
+                                            </span>
+                                            <?php if($row['status'] === 'pending'): ?>
+                                                <div>
+                                                    <a href="?action=approve&leave_id=<?= $row['id'] ?>" class="btn-action btn-approve">
+                                                        <i class="bi bi-check-lg"></i> Approve
+                                                    </a>
+                                                    <a href="?action=reject&leave_id=<?= $row['id'] ?>" class="btn-action btn-reject">
+                                                        <i class="bi bi-x-lg"></i> Reject
+                                                    </a>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php $box = ob_get_clean();
+                                if ($row['status'] === 'pending') $pendingBoxes .= $box;
+                                else $historyBoxes .= $box;
+                            endwhile; ?>
+                            <?= $pendingBoxes ?>
+                        </div>
+                    </div>
+                    <div id="history-leaves" style="display: none;">
+                        <div class="row">
+                            <?= $historyBoxes ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Leave Types Section -->
+        <div class="section" id="leave-types" style="display: none;">
+            <h3 class="section-title"><i class="bi bi-card-list"></i> Leave Types Management</h3>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Leave Types</h5>
+                    <button class="btn btn-primary" id="openAddLeaveTypeModalBtn">
+                        <i class="bi bi-plus-lg me-1"></i> Add Leave Type
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Leave Type</th>
+                                    <th>Days</th>
+                                    <th>Description & Policy</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php $leave_types_result = $conn->query('SELECT * FROM leave_types ORDER BY name'); while($lt = $leave_types_result->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($lt['name']) ?></td>
+                                    <td><?= htmlspecialchars($lt['days']) ?></td>
+                                    <td><?= htmlspecialchars($lt['description']) ?></td>
+                                    <td>
+                                        <a href="?action=delete_leave_type&leave_type_id=<?= $lt['id'] ?>" 
+                                           onclick="return confirm('Are you sure you want to delete this leave type?');" 
+                                           class="btn btn-sm btn-danger">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    </td>
+                                </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <div id="reasonPopup" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.18); z-index:2000; align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:10px; padding:32px 28px; min-width:320px; max-width:95vw; box-shadow:0 8px 32px #0002; position:relative;">
-      <button id="closeReasonPopupBtn" style="position:absolute; top:10px; right:18px; font-size:22px; color:#888; cursor:pointer; background:none; border:none; padding:5px; z-index:1001; width:fit-content; height:fit-content;">&times;</button>
-      <h3 style="margin-top:0; color:#111;">Reason</h3>
-      <div id="reasonPopupText" style="font-size:1.1em; color:#222; word-break:break-word;"></div>
+    
+    <!-- Add Leave Type Modal -->
+    <div class="modal fade" id="addLeaveTypeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Leave Type</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addLeaveTypeForm" method="POST" action="add_leave_type.php">
+                        <div class="mb-3">
+                            <label class="form-label">Leave Type Name</label>
+                            <input type="text" name="leave_type_name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Number of Days</label>
+                            <input type="number" name="leave_type_days" class="form-control" min="1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description & Policy</label>
+                            <textarea name="leave_type_description" class="form-control" rows="3" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" form="addLeaveTypeForm" class="btn btn-primary">Save Leave Type</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <script>
-    function showAddEmployeeModal() {
-      const modal = document.getElementById('addEmployeeModal');
-      const form = modal.querySelector('form');
-      
-      // Reset form for adding
-      form.reset();
-      form.action = ''; // Submit to the same page for handling
-      form.querySelector('input[name="action"]').value = 'add_employee';
-      modal.querySelector('h2').textContent = 'Add New Employee';
-      modal.querySelector('button[type="submit"]').textContent = 'Add Employee';
-      
-      // Show employee ID field for adding
-      modal.querySelector('input[name="employee_id"]').parentNode.style.display = 'block'; // Ensure it's visible
-      if (modal.querySelector('input[name="id"]')) { // Corrected selector to look for 'id'
-          modal.querySelector('input[name="id"]').remove();
-      }
-
-      // Show password fields for adding
-      modal.querySelector('#password').parentNode.parentNode.style.display = 'flex'; // Corrected to flex
-      modal.querySelector('#confirmPassword').parentNode.parentNode.style.display = 'flex'; // Corrected to flex
-
-      // Reset email validation feedback
-      const emailInput = modal.querySelector('input[name="email"]');
-      emailInput.style.border = '1px solid #ddd';
-      emailInput.setCustomValidity('');
-      const tooltip = emailInput.parentNode.querySelector('div:last-child'); // Assuming tooltip is the last child
-      if (tooltip) tooltip.style.display = 'none';
-
-      // Reset password validation feedback
-      const passwordInput = modal.querySelector('#password');
-      const confirmPasswordInput = modal.querySelector('#confirmPassword');
-      const passwordErrorIcon = modal.querySelector('#passwordErrorIcon');
-      passwordInput.value = ''; // Clear password fields
-      confirmPasswordInput.value = '';
-      passwordInput.style.border = '1px solid #ddd';
-      confirmPasswordInput.style.border = '1px solid #ddd';
-      passwordErrorIcon.classList.remove('show');
-      passwordInput.setCustomValidity('');
-      confirmPasswordInput.setCustomValidity('');
-
-      // Reset profile picture preview
-      const profilePicturePlaceholder = document.getElementById('profilePicturePlaceholder');
-      profilePicturePlaceholder.innerHTML = '&#128100;'; // Restore icon
-      profilePicturePlaceholder.style.border = 'none'; // Remove red border if any
-
-      modal.style.display = 'flex';
-    }
     
-    function hideAddEmployeeModal() {
-      document.getElementById('addEmployeeModal').style.display = 'none';
-    }
+    <!-- Add Employee Modal -->
+    <div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="" method="POST" enctype="multipart/form-data" id="employeeForm">
+                        <input type="hidden" name="action" value="add_employee">
+                        <input type="hidden" name="id" id="employeeId">
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-4 text-center">
+                                <div class="profile-picture-placeholder" id="profilePicturePlaceholder" onclick="document.getElementById('profilePictureInput').click()">
+                                    <i class="bi bi-person-plus"></i>
+                                </div>
+                                <input type="file" name="profile_picture" accept="image/*" id="profilePictureInput" class="d-none">
+                                <small class="text-muted d-block mt-2">Click to upload profile picture</small>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Employee ID</label>
+                                        <input type="text" name="employee_id" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Full Name</label>
+                                        <input type="text" name="name" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" name="email" class="form-control" required>
+                                        <div class="invalid-feedback">This email is already registered.</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Contact Number</label>
+                                        <input type="tel" name="contact_number" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Job Title</label>
+                                        <select name="job_title" class="form-select" required>
+                                            <option value="">Select Job Title</option>
+                                            <option value="Software Engineer">Software Engineer</option>
+                                            <option value="Project Manager">Project Manager</option>
+                                            <option value="HR Manager">HR Manager</option>
+                                            <option value="Accountant">Accountant</option>
+                                            <option value="Marketing Specialist">Marketing Specialist</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Department</label>
+                                        <select name="department" class="form-select" required>
+                                            <option value="">Select Department</option>
+                                            <option value="IT">IT</option>
+                                            <option value="HR">HR</option>
+                                            <option value="Finance">Finance</option>
+                                            <option value="Marketing">Marketing</option>
+                                            <option value="Operations">Operations</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3" id="passwordField">
+                                        <label class="form-label">Password</label>
+                                        <input type="password" name="password" class="form-control">
+                                    </div>
+                                    <div class="col-md-6 mb-3" id="confirmPasswordField">
+                                        <label class="form-label">Confirm Password</label>
+                                        <input type="password" name="confirm_password" class="form-control">
+                                        <div class="invalid-feedback">Passwords do not match.</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Birthday</label>
+                                        <input type="date" name="birthday" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Gender</label>
+                                        <select name="gender" class="form-select" required>
+                                            <option value="">Select Gender</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Date of Joining</label>
+                                        <input type="date" name="date_of_joining" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Role</label>
+                                        <select name="role" class="form-select" required>
+                                            <option value="employee">Employee</option>
+                                            <option value="admin">Admin</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Address</label>
+                                        <textarea name="address" class="form-control" rows="2" required></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" form="employeeForm" class="btn btn-primary">Save Employee</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-      if (event.target == document.getElementById('addEmployeeModal')) {
-        hideAddEmployeeModal();
-      }
-    }
-
-    // Live profile picture preview
-    const profilePictureInput = document.getElementById('profilePictureInput');
-    const profilePicturePlaceholder = document.getElementById('profilePicturePlaceholder');
-
-    profilePictureInput.addEventListener('change', function(event) {
-      const file = event.target.files[0];
-      const profilePicturePlaceholder = document.getElementById('profilePicturePlaceholder');
-      
-      if (file) {
-        // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-        if (!allowedTypes.includes(file.type)) {
-            alert('Please upload a valid image file (JPG, PNG, or GIF)');
-            this.value = ''; // Clear the file input
-            profilePicturePlaceholder.innerHTML = '&#128100;';
-            profilePicturePlaceholder.style.border = '2px solid red';
-            return;
-        }
-        
-        // Validate file size (max 5MB)
-        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-        if (file.size > maxSize) {
-            alert('File size should not exceed 5MB');
-            this.value = ''; // Clear the file input
-            profilePicturePlaceholder.innerHTML = '&#128100;';
-            profilePicturePlaceholder.style.border = '2px solid red';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            profilePicturePlaceholder.innerHTML = '';
-            profilePicturePlaceholder.appendChild(img);
-            profilePicturePlaceholder.style.border = 'none';
-        }
-        reader.readAsDataURL(file);
-      } else {
-        profilePicturePlaceholder.innerHTML = '&#128100;';
-        profilePicturePlaceholder.style.border = '2px solid red';
-      }
-    });
-
-    // Add email validation
-    const emailInput = document.querySelector('input[name="email"]');
-    const form = document.querySelector('form[action=""]');
-
-    function checkEmail(email) {
-      return fetch('check_email.php?email=' + encodeURIComponent(email))
-        .then(response => response.json())
-        .then(data => data.exists);
-    }
-
-    // Create tooltip
-    const tooltip = document.createElement('div');
-    tooltip.style.position = 'absolute';
-    tooltip.style.backgroundColor = '#333';
-    tooltip.style.color = 'white';
-    tooltip.style.padding = '5px 10px';
-    tooltip.style.borderRadius = '4px';
-    tooltip.style.fontSize = '12px';
-    tooltip.style.display = 'none';
-    tooltip.style.zIndex = '1000';
-    tooltip.style.top = '100%';
-    tooltip.style.right = '0';
-    tooltip.style.marginTop = '5px';
-    tooltip.style.whiteSpace = 'nowrap';
-    tooltip.textContent = 'This email is already registered';
-
-    // Create a wrapper for the input and tooltip
-    const inputWrapper = document.createElement('div');
-    inputWrapper.style.position = 'relative';
-    inputWrapper.style.display = 'inline-block';
-    inputWrapper.style.width = '100%';
+    <!-- Reason Popup Modal -->
+    <div class="modal fade" id="reasonPopup" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Leave Request Reason</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="reasonPopupText"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    // Replace the input's parent with our wrapper
-    emailInput.parentNode.insertBefore(inputWrapper, emailInput);
-    inputWrapper.appendChild(emailInput);
-    inputWrapper.appendChild(tooltip);
-
-    // Remove padding from the input
-    emailInput.style.paddingRight = '';
-
-    // Show tooltip on hover over the input itself now
-    emailInput.addEventListener('mouseenter', async function() {
-        const email = this.value.trim();
-        if (email) {
-            try {
-                const exists = await checkEmail(email);
-                if (exists) {
-                    tooltip.style.display = 'block';
-                } else {
-                    tooltip.style.display = 'none';
-                }
-            } catch (error) {
-                console.error('Error checking email:', error);
-                tooltip.style.display = 'none';
-            }
-        } else {
-            tooltip.style.display = 'none';
-        }
-    });
-
-    emailInput.addEventListener('mouseleave', function() {
-      tooltip.style.display = 'none';
-    });
-
-    // Check email on input change
-    emailInput.addEventListener('input', async function() {
-      const email = this.value.trim();
-      if (email) {
-        try {
-          const exists = await checkEmail(email);
-          if (exists) {
-            // errorIndicator.style.display = 'block'; // Removed
-            emailInput.style.border = '1px solid #dc3545'; // Add red border
-            emailInput.setCustomValidity('This email is already registered');
-          } else {
-            // errorIndicator.style.display = 'none'; // Removed
-            emailInput.style.border = '1px solid #ddd'; // Reset border
-            emailInput.setCustomValidity('');
-            tooltip.style.display = 'none';
-          }
-        } catch (error) {
-          console.error('Error checking email:', error);
-          // errorIndicator.style.display = 'none'; // Removed
-          emailInput.style.border = '1px solid #ddd'; // Reset border on error
-          emailInput.setCustomValidity('');
-          tooltip.style.display = 'none';
-        }
-      } else {
-        // errorIndicator.style.display = 'none'; // Removed
-        emailInput.style.border = '1px solid #ddd'; // Reset border
-        emailInput.setCustomValidity('');
-        tooltip.style.display = 'none';
-      }
-    });
-
-    form.addEventListener('submit', async function(e) {
-      const email = emailInput.value.trim();
-      if (email) {
-        try {
-          const exists = await checkEmail(email);
-          if (exists) {
-            e.preventDefault();
-            // errorIndicator.style.display = 'block'; // Removed
-            emailInput.style.border = '1px solid #dc3545'; // Add red border
-            emailInput.focus();
-            // Show tooltip on submit if there's an error
-            tooltip.style.display = 'block';
-          } else {
-              emailInput.style.border = '1px solid #ddd'; // Reset border
-          }
-        } catch (error) {
-          console.error('Error checking email:', error);
-          emailInput.style.border = '1px solid #ddd'; // Reset border on error
-        }
-      } else {
-          emailInput.style.border = '1px solid #ddd'; // Reset border
-      }
-    });
-
-    // Script to handle showing/hiding main sections based on hash (sidebar navigation)
-    function showSection(sectionId) {
-      // List all main section IDs within main-content
-      const mainContentSections = ['dashboard', 'employee-list', 'request-list', 'leave-types'];
-      const mainContentDiv = document.querySelector('.main-content');
-      // const leaveTypesDiv = document.getElementById('leave-types'); // No longer needed here
-
-      // Hide all sections initially
-      mainContentSections.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.style.display = 'none';
-      });
-      // if (leaveTypesDiv) leaveTypesDiv.style.display = 'none'; // No longer needed here
-
-      // Show the requested section
-      const targetSection = document.getElementById(sectionId);
-      if (targetSection) {
-          targetSection.style.display = 'block';
-          // Ensure main content div is visible if any section inside it is shown
-          if (mainContentDiv) mainContentDiv.style.display = 'block';
-      } else {
-          // If the section doesn't exist, show dashboard as fallback
-          document.getElementById('dashboard').style.display = 'block';
-          if (mainContentDiv) mainContentDiv.style.display = 'block';
-      }
-
-      // Update active class on sidebar links
-      document.querySelectorAll('.sidebar a').forEach(link => {
-        link.classList.remove('active');
-      });
-      const activeSidebarLink = document.querySelector(`.sidebar a[href="#${sectionId}"]`);
-      if (activeSidebarLink) {
-        activeSidebarLink.classList.add('active');
-      }
-      // If navigating to the request list, ensure a leave tab is active
-      if (sectionId === 'request-list') {
-        const activeTabButton = document.querySelector('#request-list .tab-btns .tab-btn.active');
-        if (activeTabButton) {
-          activeTabButton.click();
-        } else {
-          showTab('pending');
-        }
-      }
-    }
-
-    // Script to handle showing/hiding leave request tabs within the Request List section
-    function showTab(tab) {
-        // Hide all leave request tab content
-        document.getElementById('pending-leaves').style.display = 'none';
-        document.getElementById('history-leaves').style.display = 'none';
-
-        // Show the requested leave request tab content
-        document.getElementById(tab + '-leaves').style.display = '';
-
-        // Update active class on tab buttons
-      document.getElementById('pendingTab').classList.toggle('active', tab === 'pending');
-      document.getElementById('historyTab').classList.toggle('active', tab === 'history');
-    }
-
-    // Show default main section on load or based on hash in URL
-    window.addEventListener('load', () => {
-        const section = window.location.hash.substring(1) || 'dashboard'; // Default to dashboard
-        showSection(section);
-    });
-
-    // Handle hash changes in URL (e.g., when clicking sidebar links)
-    window.addEventListener('hashchange', () => {
-        const section = window.location.hash.substring(1) || 'dashboard';
-        showSection(section);
-    });
-
-    // Password confirmation validation
-    const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-    const passwordErrorIcon = document.getElementById('passwordErrorIcon');
-
-    function validatePassword() {
-      const password = passwordInput.value;
-      const confirmPassword = confirmPasswordInput.value;
-      
-      // Only validate if confirm password has input
-      if (confirmPassword) {
-        if (password !== confirmPassword) {
-          // Passwords do not match
-          passwordErrorIcon.classList.add('show');
-          confirmPasswordInput.setCustomValidity('Passwords do not match');
-        } else {
-          // Passwords match
-          passwordErrorIcon.classList.remove('show');
-          confirmPasswordInput.setCustomValidity('');
-        }
-      } else {
-          // Confirm password is empty, no error yet
-          passwordErrorIcon.classList.remove('show');
-          confirmPasswordInput.setCustomValidity('');
-      }
-    }
-
-    // Add event listeners for real-time validation
-    passwordInput.addEventListener('input', validatePassword);
-    confirmPasswordInput.addEventListener('input', validatePassword);
-
-    // Also validate on form submission
-    form.addEventListener('submit', function(e) {
-      // Only validate passwords on submit if they are visible (i.e., in add mode)
-      if (passwordInput.parentNode.parentNode.style.display !== 'none') {
-          validatePassword();
-          if (confirmPasswordInput.validity.customError) {
-            e.preventDefault();
-            confirmPasswordInput.focus();
-          }
-      }
-      // Add debug logging for form submission
-      console.log('Form submitted with data:', new FormData(form));
-    });
-
-    // Function to open the Add Employee Modal for editing
-    function openEditEmployeeModal(editIconElement) {
-        const employeeBox = editIconElement.closest('.employee-box');
-        const modal = document.getElementById('addEmployeeModal');
-        const form = modal.querySelector('form');
-
-        // Populate form with employee data
-        form.querySelector('input[name="employee_id"]').value = employeeBox.dataset.employee_id;
-        form.querySelector('input[name="name"]').value = employeeBox.dataset.name;
-        form.querySelector('input[name="email"]').value = employeeBox.dataset.email;
-        form.querySelector('select[name="job_title"]').value = employeeBox.dataset.job_title;
-        form.querySelector('input[name="contact_number"]').value = employeeBox.dataset.contact_number;
-        form.querySelector('input[name="birthday"]').value = employeeBox.dataset.birthday;
-        form.querySelector('select[name="department"]').value = employeeBox.dataset.department;
-        form.querySelector('select[name="gender"]').value = employeeBox.dataset.gender;
-        form.querySelector('input[name="date_of_joining"]').value = employeeBox.dataset.date_of_joining;
-        form.querySelector('textarea[name="address"]').value = employeeBox.dataset.address;
-        form.querySelector('select[name="role"]').value = employeeBox.dataset.role;
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle sidebar on mobile
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('show');
+        });
         
-        // Set profile picture preview
-        const profilePicturePlaceholder = document.getElementById('profilePicturePlaceholder');
-        const profilePicturePath = employeeBox.dataset.profile_picture;
-        if (profilePicturePath && profilePicturePath !== 'default-avatar.png') {
-            profilePicturePlaceholder.innerHTML = '<img src="' + profilePicturePath + '" alt="Profile Picture">';
-        } else {
-            profilePicturePlaceholder.innerHTML = '&#128100;'; // Default icon
-        }
-        profilePicturePlaceholder.style.border = 'none'; // Remove red border if any
-
-        // Change form action and button text for editing
-        form.action = 'admin_dashboard.php'; // Ensure form submits to the correct page
-        form.querySelector('input[name="action"]').value = 'edit_employee';
-        modal.querySelector('h2').textContent = 'Edit Employee';
-        modal.querySelector('button[type="submit"]').textContent = 'Save Changes';
-
-        // Add hidden input for employee ID
-        let idInput = form.querySelector('input[name="id"]');
-        if (!idInput) {
-            idInput = document.createElement('input');
-            idInput.type = 'hidden';
-            idInput.name = 'id';
-            form.appendChild(idInput);
-        }
-        idInput.value = employeeBox.dataset.id;
-
-        // Hide employee ID field and password fields for editing
-        modal.querySelector('input[name="employee_id"]').parentNode.style.display = 'none'; // Hide employee ID field
-        modal.querySelector('#password').parentNode.parentNode.style.display = 'none'; // Hide password field row
-        modal.querySelector('#confirmPassword').parentNode.parentNode.style.display = 'none'; // Hide confirm password field row
-
-        // Reset email validation feedback
-        const emailInput = modal.querySelector('input[name="email"]');
-        emailInput.style.border = '1px solid #ddd';
-        emailInput.setCustomValidity('');
-        const tooltip = emailInput.parentNode.querySelector('div:last-child');
-        if (tooltip) tooltip.style.display = 'none';
-
-        // Reset password validation feedback (though fields are hidden)
-        const passwordInput = modal.querySelector('#password');
-        const confirmPasswordInput = modal.querySelector('#confirmPassword');
-        const passwordErrorIcon = modal.querySelector('#passwordErrorIcon');
-        passwordInput.value = ''; // Clear password fields
-        confirmPasswordInput.value = '';
-        passwordInput.style.border = '1px solid #ddd';
-        confirmPasswordInput.style.border = '1px solid #ddd';
-        passwordErrorIcon.classList.remove('show');
-        passwordInput.setCustomValidity('');
-        confirmPasswordInput.setCustomValidity('');
-
-        modal.style.display = 'flex';
-    }
-
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const profilePictureInput = document.getElementById('profilePictureInput');
-        const profilePicturePlaceholder = document.getElementById('profilePicturePlaceholder');
-        
-        // Check if we're in add mode (not edit mode)
-        if (profilePictureInput.parentNode.parentNode.querySelector('h2').textContent === 'Add New Employee') {
-            if (!profilePictureInput.files || profilePictureInput.files.length === 0) {
-                e.preventDefault(); // Prevent form submission
-                profilePicturePlaceholder.style.border = '2px solid red';
-                alert('Please upload a profile picture');
-                return false;
+        // Navigation functionality
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show the requested section
+            document.getElementById(sectionId).style.display = 'block';
+            
+            // Update active class on sidebar links
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`.sidebar .nav-link[href="#${sectionId}"]`).classList.add('active');
+            
+            // If navigating to request list, ensure a tab is active
+            if (sectionId === 'request-list') {
+                showTab('pending');
             }
         }
-    });
-
-    // Reason popup logic for admin dashboard
-    function showReasonPopup(cell) {
-      var text = cell.textContent;
-      document.getElementById('reasonPopupText').textContent = text;
-      document.getElementById('reasonPopup').style.display = 'flex';
-    }
-    document.getElementById('closeReasonPopupBtn').onclick = function() {
-      document.getElementById('reasonPopup').style.display = 'none';
-    };
-    window.onclick = function(event) {
-      if (event.target == document.getElementById('reasonPopup')) {
-        document.getElementById('reasonPopup').style.display = 'none';
-      }
-      // Existing modal close logic for add employee
-      if (event.target == document.getElementById('addEmployeeModal')) {
-        hideAddEmployeeModal();
-      }
-    }
-
-    // Sidebar navigation for Leave Types
-    document.getElementById('leaveTypesSidebarBtn').onclick = function() {
-      window.location.hash = 'leave-types';
-    };
-
-    // Add Leave Type Modal Logic
-    function showAddLeaveTypeModal() {
-        document.getElementById('addLeaveTypeModal').style.display = 'flex';
-    }
-
-    function hideAddLeaveTypeModal() {
-        document.getElementById('addLeaveTypeModal').style.display = 'none';
-    }
-
-    // Attach event listener to the Add Leave Type button
-    document.getElementById('openAddLeaveTypeModalBtn').addEventListener('click', showAddLeaveTypeModal);
-
-    // Attach event listeners to close the Add Leave Type modal
-    document.getElementById('closeAddLeaveTypeModalBtn').addEventListener('click', hideAddLeaveTypeModal);
-    document.getElementById('cancelAddLeaveTypeModalBtn').addEventListener('click', hideAddLeaveTypeModal);
-
-    // Close modal when clicking outside (update existing function)
-    window.onclick = function(event) {
-      if (event.target == document.getElementById('reasonPopup')) {
-        document.getElementById('reasonPopup').style.display = 'none';
-      }
-      // Existing modal close logic for add employee
-      if (event.target == document.getElementById('addEmployeeModal')) {
-        hideAddEmployeeModal();
-      }
-      // Add modal close logic for add leave type
-      if (event.target == document.getElementById('addLeaveTypeModal')) {
-        hideAddLeaveTypeModal();
-      }
-    }
-
-    // Add filter functionality
-    function resetFilters() {
-        document.getElementById('status_filter').value = '';
-        document.getElementById('date_from').value = '';
-        document.getElementById('date_to').value = '';
-        document.getElementById('employee_filter').value = '';
-        document.getElementById('leave_type_filter').value = '';
-        document.getElementById('filterForm').submit();
-    }
-
-    // Export to CSV
-    function exportToCSV() {
-        const filters = new URLSearchParams(new FormData(document.getElementById('filterForm'))).toString();
-        window.location.href = `export_leave_data.php?format=csv&${filters}`;
-    }
-
-    // Export to PDF
-    function exportToPDF() {
-        const filters = new URLSearchParams(new FormData(document.getElementById('filterForm'))).toString();
-        window.location.href = `export_leave_data.php?format=pdf&${filters}`;
-    }
-
-    function exportData(format) {
-        const statusFilter = document.getElementById('status_filter').value;
-        const dateFrom = document.getElementById('date_from').value;
-        const dateTo = document.getElementById('date_to').value;
-        const employeeFilter = document.getElementById('employee_filter').value;
-        const leaveTypeFilter = document.getElementById('leave_type_filter').value;
-
-        // Build query string
-        const params = new URLSearchParams({
-            format: format,
-            status_filter: statusFilter,
-            date_from: dateFrom,
-            date_to: dateTo,
-            employee_filter: employeeFilter,
-            leave_type_filter: leaveTypeFilter
+        
+        // Show default section on load
+        window.addEventListener('load', () => {
+            const section = window.location.hash.substring(1) || 'dashboard';
+            showSection(section);
         });
-
-        // Redirect to export script
-        window.location.href = `export_leave_data.php?${params.toString()}`;
-    }
-
-    // Reset Employee Filters
-    function resetEmployeeFilters() {
-        document.getElementById('department_filter').value = '';
-        document.getElementById('employeeFilterForm').submit();
-    }
-
-    // Export Employee Data
-    function exportEmployeeData(format) {
-        const departmentFilter = document.getElementById('department_filter').value;
-
-        // Build query string
-        const params = new URLSearchParams({
-            format: format,
-            department_filter: departmentFilter
+        
+        // Handle hash changes
+        window.addEventListener('hashchange', () => {
+            const section = window.location.hash.substring(1) || 'dashboard';
+            showSection(section);
         });
-
-        // Redirect to export script
-        window.location.href = `export_employee_data.php?${params.toString()}`;
-    }
-
-  </script>
+        
+        // Tab functionality for request list
+        function showTab(tab) {
+            document.getElementById('pending-leaves').style.display = tab === 'pending' ? 'block' : 'none';
+            document.getElementById('history-leaves').style.display = tab === 'history' ? 'block' : 'none';
+            
+            // Update active class on tab buttons
+            document.getElementById('pendingTab').classList.toggle('active', tab === 'pending');
+            document.getElementById('historyTab').classList.toggle('active', tab === 'history');
+        }
+        
+        // Employee modal functions
+        function showAddEmployeeModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addEmployeeModal'));
+            const form = document.getElementById('employeeForm');
+            
+            // Reset form for adding
+            form.reset();
+            form.querySelector('input[name="action"]').value = 'add_employee';
+            document.querySelector('.modal-title').textContent = 'Add New Employee';
+            document.querySelector('button[type="submit"]').textContent = 'Add Employee';
+            
+            // Show employee ID field and password fields
+            document.querySelector('input[name="employee_id"]').parentNode.style.display = 'block';
+            document.getElementById('passwordField').style.display = 'block';
+            document.getElementById('confirmPasswordField').style.display = 'block';
+            
+            // Clear any validation classes
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            
+            // Reset profile picture preview
+            const profilePicturePlaceholder = document.getElementById('profilePicturePlaceholder');
+            profilePicturePlaceholder.innerHTML = '<i class="bi bi-person-plus"></i>';
+            
+            modal.show();
+        }
+        
+        function openEditEmployeeModal(btn) {
+            const employeeCard = btn.closest('.employee-card');
+            const modal = new bootstrap.Modal(document.getElementById('addEmployeeModal'));
+            const form = document.getElementById('employeeForm');
+            
+            // Populate form with employee data
+            form.querySelector('input[name="employee_id"]').value = employeeCard.dataset.employee_id;
+            form.querySelector('input[name="name"]').value = employeeCard.dataset.name;
+            form.querySelector('input[name="email"]').value = employeeCard.dataset.email;
+            form.querySelector('select[name="job_title"]').value = employeeCard.dataset.job_title;
+            form.querySelector('input[name="contact_number"]').value = employeeCard.dataset.contact_number;
+            form.querySelector('input[name="birthday"]').value = employeeCard.dataset.birthday;
+            form.querySelector('select[name="department"]').value = employeeCard.dataset.department;
+            form.querySelector('select[name="gender"]').value = employeeCard.dataset.gender;
+            form.querySelector('input[name="date_of_joining"]').value = employeeCard.dataset.date_of_joining;
+            form.querySelector('textarea[name="address"]').value = employeeCard.dataset.address;
+            form.querySelector('select[name="role"]').value = employeeCard.dataset.role;
+            form.querySelector('input[name="id"]').value = employeeCard.dataset.id;
+            
+            // Set profile picture preview
+            const profilePicturePlaceholder = document.getElementById('profilePicturePlaceholder');
+            const profilePicturePath = employeeCard.dataset.profile_picture;
+            if (profilePicturePath && profilePicturePath !== 'default-avatar.png') {
+                profilePicturePlaceholder.innerHTML = `<img src="${profilePicturePath}" alt="Profile Picture">`;
+            } else {
+                profilePicturePlaceholder.innerHTML = '<i class="bi bi-person"></i>';
+            }
+            
+            // Change form for editing
+            form.querySelector('input[name="action"]').value = 'edit_employee';
+            document.querySelector('.modal-title').textContent = 'Edit Employee';
+            document.querySelector('button[type="submit"]').textContent = 'Save Changes';
+            
+            // Hide employee ID field and password fields
+            document.querySelector('input[name="employee_id"]').parentNode.style.display = 'none';
+            document.getElementById('passwordField').style.display = 'none';
+            document.getElementById('confirmPasswordField').style.display = 'none';
+            
+            modal.show();
+        }
+        
+        // Profile picture preview
+        document.getElementById('profilePictureInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const profilePicturePlaceholder = document.getElementById('profilePicturePlaceholder');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    profilePicturePlaceholder.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Leave type modal
+        document.getElementById('openAddLeaveTypeModalBtn').addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('addLeaveTypeModal'));
+            modal.show();
+        });
+        
+        // Reason popup
+        function showReasonPopup(text) {
+            document.getElementById('reasonPopupText').textContent = text;
+            const modal = new bootstrap.Modal(document.getElementById('reasonPopup'));
+            modal.show();
+        }
+        
+        // Filter functions
+        function resetFilters() {
+            document.getElementById('status_filter').value = '';
+            document.getElementById('date_from').value = '';
+            document.getElementById('date_to').value = '';
+            document.getElementById('employee_filter').value = '';
+            document.getElementById('leave_type_filter').value = '';
+            document.getElementById('filterForm').submit();
+        }
+        
+        function resetEmployeeFilters() {
+            document.getElementById('department_filter').value = '';
+            document.getElementById('employeeFilterForm').submit();
+        }
+        
+        function exportToCSV() {
+            const filters = new URLSearchParams(new FormData(document.getElementById('filterForm'))).toString();
+            window.location.href = `export_leave_data.php?format=csv&${filters}`;
+        }
+        
+        function exportToPDF() {
+            const filters = new URLSearchParams(new FormData(document.getElementById('filterForm'))).toString();
+            window.location.href = `export_leave_data.php?format=pdf&${filters}`;
+        }
+        
+        function exportEmployeeData(format) {
+            const departmentFilter = document.getElementById('department_filter').value;
+            window.location.href = `export_employee_data.php?format=${format}&department_filter=${departmentFilter}`;
+        }
+        
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    </script>
 </body>
-</html> 
+</html>
