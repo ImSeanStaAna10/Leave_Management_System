@@ -785,6 +785,14 @@ $recent_requests = $conn->query('
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="logo">LeaveManager</div>
+        <div class="search-container mb-3 px-3">
+            <div class="input-group">
+                <input type="text" id="globalSearch" class="form-control" placeholder="Search employee...">
+                <button class="btn btn-light" type="button" onclick="performSearch()">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link active" href="#dashboard">
@@ -991,13 +999,9 @@ $recent_requests = $conn->query('
                             <div class="col-md-3 d-flex align-items-end">
                                 <button type="submit" class="btn btn-primary me-2">Apply</button>
                                 <button type="button" onclick="resetEmployeeFilters()" class="btn btn-outline-secondary me-2">Reset</button>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">Export</button>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="#" onclick="exportEmployeeData('csv')">CSV</a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="exportEmployeeData('pdf')">PDF</a></li>
-                                    </ul>
-                                </div>
+                                <button type="button" class="btn btn-success" onclick="exportEmployeeData()">
+                                    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -1074,64 +1078,9 @@ $recent_requests = $conn->query('
                 </div>
                 <div class="card-body">
                     <div class="mb-4">
-                        <form id="filterForm" method="GET" class="row g-3">
-                            <div class="col-md-3">
-                                <label class="form-label">Status</label>
-                                <select name="status_filter" id="status_filter" class="form-select">
-                                    <option value="">All Status</option>
-                                    <option value="pending" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'pending' ? 'selected' : '' ?>>Pending</option>
-                                    <option value="approved" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'approved' ? 'selected' : '' ?>>Approved</option>
-                                    <option value="rejected" <?= isset($_GET['status_filter']) && $_GET['status_filter'] === 'rejected' ? 'selected' : '' ?>>Rejected</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">From Date</label>
-                                <input type="date" name="date_from" id="date_from" class="form-control" value="<?= isset($_GET['date_from']) ? $_GET['date_from'] : '' ?>">
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">To Date</label>
-                                <input type="date" name="date_to" id="date_to" class="form-control" value="<?= isset($_GET['date_to']) ? $_GET['date_to'] : '' ?>">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Employee</label>
-                                <select name="employee_filter" id="employee_filter" class="form-select">
-                                    <option value="">All Employees</option>
-                                    <?php
-                                    $employees = $conn->query('SELECT id, name FROM users WHERE role = "employee" ORDER BY name');
-                                    while($emp = $employees->fetch_assoc()):
-                                    ?>
-                                    <option value="<?= $emp['id'] ?>" <?= isset($_GET['employee_filter']) && $_GET['employee_filter'] == $emp['id'] ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($emp['name']) ?>
-                                    </option>
-                                    <?php endwhile; ?>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Leave Type</label>
-                                <select name="leave_type_filter" id="leave_type_filter" class="form-select">
-                                    <option value="">All Types</option>
-                                    <?php
-                                    $leave_types = $conn->query('SELECT id, name FROM leave_types ORDER BY name');
-                                    while($lt = $leave_types->fetch_assoc()):
-                                    ?>
-                                    <option value="<?= $lt['id'] ?>" <?= isset($_GET['leave_type_filter']) && $_GET['leave_type_filter'] == $lt['id'] ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($lt['name']) ?>
-                                    </option>
-                                    <?php endwhile; ?>
-                                </select>
-                            </div>
-                            <div class="col-md-12 d-flex justify-content-end">
-                                <button type="submit" class="btn btn-primary me-2">Apply Filters</button>
-                                <button type="button" onclick="resetFilters()" class="btn btn-outline-secondary me-2">Reset</button>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">Export</button>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="#" onclick="exportToCSV()">CSV</a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="exportToPDF()">PDF</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </form>
+                        <button type="button" class="btn btn-success" onclick="exportToCSV()">
+                            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export
+                        </button>
                     </div>
                     
                     <div id="pending-leaves">
@@ -1395,6 +1344,30 @@ $recent_requests = $conn->query('
         </div>
     </div>
     
+    <!-- Search Results Modal -->
+    <div class="modal fade" id="searchResultsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Employee Search Results</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="searchResultsContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="printSearchResults()">
+                        <i class="bi bi-printer me-1"></i> Print
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="exportSearchResults()">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -1557,18 +1530,12 @@ $recent_requests = $conn->query('
         }
         
         function exportToCSV() {
-            const filters = new URLSearchParams(new FormData(document.getElementById('filterForm'))).toString();
-            window.location.href = `export_leave_data.php?format=csv&${filters}`;
+            window.location.href = 'export_leave_data.php?format=csv';
         }
         
-        function exportToPDF() {
-            const filters = new URLSearchParams(new FormData(document.getElementById('filterForm'))).toString();
-            window.location.href = `export_leave_data.php?format=pdf&${filters}`;
-        }
-        
-        function exportEmployeeData(format) {
+        function exportEmployeeData() {
             const departmentFilter = document.getElementById('department_filter').value;
-            window.location.href = `export_employee_data.php?format=${format}&department_filter=${departmentFilter}`;
+            window.location.href = `export_employee_data.php?format=csv&department_filter=${departmentFilter}`;
         }
         
         // Initialize tooltips
@@ -1576,6 +1543,129 @@ $recent_requests = $conn->query('
         tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
+
+        // Search functionality
+        function performSearch() {
+            const searchTerm = document.getElementById('globalSearch').value.trim();
+            if (!searchTerm) return;
+
+            // Show loading state
+            const searchResultsContent = document.getElementById('searchResultsContent');
+            searchResultsContent.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+
+            // Fetch search results
+            fetch(`search_employee.php?term=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        searchResultsContent.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                        return;
+                    }
+
+                    let html = '';
+                    data.forEach(employee => {
+                        html += `
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">${employee.name} (${employee.employee_id})</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Employee Information</h6>
+                                            <p><strong>Department:</strong> ${employee.department}</p>
+                                            <p><strong>Job Title:</strong> ${employee.job_title}</p>
+                                            <p><strong>Email:</strong> ${employee.email}</p>
+                                            <p><strong>Contact:</strong> ${employee.contact_number}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Leave Statistics</h6>
+                                            <p><strong>Total Leaves:</strong> ${employee.total_leaves}</p>
+                                            <p><strong>Approved:</strong> ${employee.approved_leaves}</p>
+                                            <p><strong>Pending:</strong> ${employee.pending_leaves}</p>
+                                            <p><strong>Rejected:</strong> ${employee.rejected_leaves}</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <h6>Recent Leave History</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Type</th>
+                                                        <th>Start Date</th>
+                                                        <th>End Date</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${employee.recent_leaves.map(leave => `
+                                                        <tr>
+                                                            <td>${leave.type}</td>
+                                                            <td>${leave.start_date}</td>
+                                                            <td>${leave.end_date}</td>
+                                                            <td><span class="badge bg-${leave.status === 'approved' ? 'success' : leave.status === 'pending' ? 'warning' : 'danger'}">${leave.status}</span></td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    searchResultsContent.innerHTML = html || '<div class="alert alert-info">No results found</div>';
+                })
+                .catch(error => {
+                    searchResultsContent.innerHTML = '<div class="alert alert-danger">Error performing search</div>';
+                    console.error('Search error:', error);
+                });
+
+            // Show the modal
+            const searchModal = new bootstrap.Modal(document.getElementById('searchResultsModal'));
+            searchModal.show();
+        }
+
+        // Handle Enter key in search input
+        document.getElementById('globalSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        function printSearchResults() {
+            const content = document.getElementById('searchResultsContent').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Employee Search Results</title>
+                        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+                        <style>
+                            body { padding: 20px; }
+                            @media print {
+                                .no-print { display: none; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="no-print mb-3">
+                            <button onclick="window.print()" class="btn btn-primary">Print</button>
+                            <button onclick="window.close()" class="btn btn-secondary">Close</button>
+                        </div>
+                        ${content}
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        function exportSearchResults() {
+            const searchTerm = document.getElementById('globalSearch').value.trim();
+            window.location.href = `export_search_results.php?term=${encodeURIComponent(searchTerm)}`;
+        }
     </script>
 </body>
 </html>

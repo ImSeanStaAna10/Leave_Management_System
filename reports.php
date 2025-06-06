@@ -463,29 +463,11 @@ $rejection_rate = $total_leaves_all > 0 ? round(($rejected_count / $total_leaves
         </ul>
     </div>
 
-    <!-- Header -->
-    <div class="header">
-        <button class="btn d-lg-none" type="button" id="sidebarToggle">
-            <i class="bi bi-list"></i>
-        </button>
-        <div class="d-flex align-items-center">
-            <div class="me-3">
-                <i class="bi bi-person-circle fs-4"></i>
-            </div>
-            <div>
-                <div class="fw-bold">Admin</div>
-            </div>
-        </div>
-    </div>
-
     <!-- Main Content -->
     <div class="main-content">
         <!-- Reports Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="section-title"><i class="bi bi-bar-chart"></i> Reports & Analytics</h3>
-            <button class="btn btn-primary" onclick="exportAllReports()">
-                <i class="bi bi-download me-1"></i> Export All Reports
-            </button>
         </div>
         
         <!-- Summary Cards -->
@@ -728,11 +710,6 @@ $rejection_rate = $total_leaves_all > 0 ? round(($rejected_count / $total_leaves
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Toggle sidebar on mobile
-        document.getElementById('sidebarToggle').addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('show');
-        });
-        
         // Initialize charts
         document.addEventListener('DOMContentLoaded', function() {
             // Leave Type Distribution Chart

@@ -443,11 +443,6 @@ if ($nextMonth > 12) {
                 <div class="fw-bold">Admin</div>
             </div>
         </div>
-        <div>
-            <a href="logout.php" class="logout-link">
-                <i class="bi bi-box-arrow-right me-1"></i> Logout
-            </a>
-        </div>
     </div>
 
     <!-- Main Content -->

@@ -1,41 +1,609 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <title>Login - Leave Management</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div id="login-hint" style="display:none; position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:100; min-width:220px; max-width:90vw; padding:13px 28px; background:#fffbe6; color:#b59f00; border:1.5px solid #b59f00; border-radius:8px; font-size:16px; font-weight:600; box-shadow:0 2px 12px #0002; text-align:center; transition:opacity 0.5s; opacity:1;">Wrong email or password.</div>
-  <div class="login-container">
-    <h2>Login</h2>
-    <form action="login.php" method="POST" style="position:relative;">
-      <input type="text" name="email" placeholder="Email" required>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <input type="password" name="password" id="password" placeholder="Password" required>
-        <span id="login-hint" style="display:none; min-width:180px; padding:7px 14px; background:#fffbe6; color:#b59f00; border:1px solid #b59f00; border-radius:6px; font-size:14px; font-weight:500; margin-left:4px; transition:opacity 0.5s; opacity:1;">Wrong email or password.</span>
-      </div>
-      <button type="submit">Login</button>
-    </form>
-  </div>
-  <script>
-  window.onload = function() {
-    if (window.location.search.includes('error=1')) {
-      var hint = document.getElementById('login-hint');
-      hint.style.display = '';
-      hint.style.opacity = '1';
-      var pw = document.querySelector('input[type="password"]');
-      if (pw) pw.value = '';
-      setTimeout(function() {
-        hint.style.opacity = '0';
-        setTimeout(function() { hint.style.display = 'none'; }, 500);
-      }, 2500);
-      if (window.history.replaceState) {
-        const url = new URL(window.location);
-        url.searchParams.delete('error');
-        window.history.replaceState({}, document.title, url.pathname + url.search);
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Leave Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       }
-    }
-  }
-  </script>
-</body>
-</html> 
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #0c1c2c, #0f2a3f, #0c1c2c);
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Animated gradient background */
+      .gradient-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+            circle at center,
+            rgba(32, 106, 179, 0.2) 0%,
+            rgba(0, 0, 0, 0) 50%
+          ),
+          linear-gradient(
+            135deg,
+            #0c1c2c 0%,
+            #0f2a3f 25%,
+            #0c1c2c 50%,
+            #0f2a3f 75%,
+            #0c1c2c 100%
+          );
+        background-size: 400% 400%;
+        animation: gradientShift 20s ease infinite;
+        z-index: 1;
+      }
+
+      @keyframes gradientShift {
+        0% {
+          background-position: 0% 0%;
+        }
+        50% {
+          background-position: 100% 100%;
+        }
+        100% {
+          background-position: 0% 0%;
+        }
+      }
+
+      /* Floating 3D shapes */
+      .shapes-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2;
+        overflow: hidden;
+      }
+
+      .shape {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(60px);
+        opacity: 0.5;
+        animation: float 25s infinite linear;
+        z-index: 2;
+      }
+
+      .shape:nth-child(1) {
+        background: linear-gradient(45deg, #4facfe, #00f2fe);
+        width: 400px;
+        height: 400px;
+        top: -100px;
+        left: -100px;
+        animation-delay: 0s;
+      }
+
+      .shape:nth-child(2) {
+        background: linear-gradient(135deg, #43cbff, #9708cc);
+        width: 300px;
+        height: 300px;
+        bottom: -50px;
+        right: 100px;
+        animation-delay: -5s;
+      }
+
+      .shape:nth-child(3) {
+        background: linear-gradient(225deg, #5ee7df, #b490ca);
+        width: 250px;
+        height: 250px;
+        top: 150px;
+        right: -50px;
+        animation-delay: -10s;
+      }
+
+      .shape:nth-child(4) {
+        background: linear-gradient(315deg, #d4fc79, #96e6a1);
+        width: 200px;
+        height: 200px;
+        bottom: 100px;
+        left: 200px;
+        animation-delay: -15s;
+      }
+
+      @keyframes float {
+        0% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        25% {
+          transform: translate(50px, 50px) rotate(90deg);
+        }
+        50% {
+          transform: translate(0, 100px) rotate(180deg);
+        }
+        75% {
+          transform: translate(-50px, 50px) rotate(270deg);
+        }
+        100% {
+          transform: translate(0, 0) rotate(360deg);
+        }
+      }
+
+      /* Particles background */
+      .particles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 3;
+        overflow: hidden;
+      }
+
+      .particle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        animation: floatParticle linear infinite;
+      }
+
+      @keyframes floatParticle {
+        0% {
+          transform: translateY(0) translateX(0) rotate(0deg);
+          opacity: 0;
+        }
+        10% {
+          opacity: 0.8;
+        }
+        90% {
+          opacity: 0.8;
+        }
+        100% {
+          transform: translateY(-100vh) translateX(100px) rotate(360deg);
+          opacity: 0;
+        }
+      }
+
+      /* Login Container */
+      .login-container {
+        background: rgba(15, 30, 45, 0.7);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        padding: 40px;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(79, 172, 254, 0.2);
+        position: relative;
+        overflow: hidden;
+        z-index: 10;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .login-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7),
+          0 0 0 2px rgba(79, 172, 254, 0.3);
+      }
+
+      .login-container::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+          circle,
+          rgba(79, 172, 254, 0.1) 0%,
+          rgba(79, 172, 254, 0) 70%
+        );
+        z-index: -1;
+      }
+
+      .login-container::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(90deg, #4facfe, #00f2fe);
+        z-index: 5;
+      }
+
+      .login-container h2 {
+        color: white;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 32px;
+        font-weight: 700;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        letter-spacing: 1px;
+      }
+
+      .logo {
+        text-align: center;
+        margin-bottom: 25px;
+      }
+
+      .logo i {
+        font-size: 48px;
+        color: white;
+        background: linear-gradient(to right, #4facfe, #00f2fe);
+        padding: 15px 20px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      /* Form Styling */
+      .form-group {
+        margin-bottom: 30px;
+        position: relative;
+      }
+
+      .input-with-icon {
+        position: relative;
+      }
+
+      .input-with-icon i {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(79, 172, 254, 0.9);
+        font-size: 18px;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 16px 16px 16px 55px;
+        border: none;
+        background: rgba(15, 30, 45, 0.6);
+        border-radius: 12px;
+        color: white;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(79, 172, 254, 0.2);
+        box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .form-group input::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      .form-group input:focus {
+        outline: none;
+        background: rgba(15, 30, 45, 0.8);
+        border: 1px solid rgba(79, 172, 254, 0.5);
+        box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3),
+          inset 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .password-toggle {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(79, 172, 254, 0.7);
+        cursor: pointer;
+        font-size: 18px;
+        transition: color 0.3s;
+      }
+
+      .password-toggle:hover {
+        color: rgba(79, 172, 254, 1);
+      }
+
+      button.login-btn {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(to right, #4facfe, #00f2fe);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+        letter-spacing: 1px;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+      }
+
+      button.login-btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to right, #3a9cfd, #00e0f0);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: -1;
+      }
+
+      button.login-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      }
+
+      button.login-btn:hover::before {
+        opacity: 1;
+      }
+
+      button.login-btn:active {
+        transform: translateY(1px);
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.4);
+      }
+
+      /* Error Hint */
+      #login-hint {
+        position: fixed;
+        left: 50%;
+        top: -100px;
+        transform: translateX(-50%);
+        z-index: 100;
+        min-width: 300px;
+        padding: 18px 30px;
+        background: rgba(231, 76, 60, 0.9);
+        color: white;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 500;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        transition: top 0.5s ease, opacity 0.3s ease;
+        opacity: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      #login-hint.show {
+        opacity: 1;
+        top: 30px;
+      }
+
+      /* Wave animation at the bottom */
+      .waves {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100px;
+        background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".15" fill="%234facfe"/><path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".25" fill="%234facfe"/><path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" opacity=".35" fill="%234facfe"/></svg>');
+        background-size: cover;
+        background-repeat: no-repeat;
+        z-index: 4;
+        animation: waveAnimation 15s linear infinite;
+      }
+
+      @keyframes waveAnimation {
+        0% {
+          background-position-x: 0;
+        }
+        100% {
+          background-position-x: 1000px;
+        }
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .login-container {
+          width: 90%;
+          padding: 30px 20px;
+          margin: 20px;
+        }
+
+        .login-container h2 {
+          font-size: 28px;
+        }
+
+        .shape {
+          filter: blur(40px);
+        }
+
+        .shape:nth-child(1) {
+          width: 300px;
+          height: 300px;
+        }
+
+        .shape:nth-child(2),
+        .shape:nth-child(3),
+        .shape:nth-child(4) {
+          width: 200px;
+          height: 200px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Background elements -->
+    <div class="gradient-bg"></div>
+
+    <div class="shapes-container">
+      <div class="shape"></div>
+      <div class="shape"></div>
+      <div class="shape"></div>
+      <div class="shape"></div>
+    </div>
+
+    <div class="particles" id="particles"></div>
+
+    <!-- Animated wave at the bottom -->
+    <div class="waves"></div>
+
+    <!-- Error message -->
+    <div id="login-hint">
+      <i class="fas fa-exclamation-circle"></i>
+      <span>Wrong email or password. Please try again.</span>
+    </div>
+
+    <!-- Login container -->
+    <div class="login-container">
+      <div class="logo">
+        <i class="fas fa-calendar-alt"></i>
+      </div>
+      <h2>LEAVE MANAGEMENT</h2>
+
+      <form action="login.php" method="POST">
+        <div class="form-group">
+          <div class="input-with-icon">
+            <i class="fas fa-envelope"></i>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email Address"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="input-with-icon">
+            <i class="fas fa-lock"></i>
+            <input
+              type="password"
+              name="password"
+              id="password"
+              placeholder="Password"
+              required
+            />
+            <span class="password-toggle" id="togglePassword">
+              <i class="fas fa-eye"></i>
+            </span>
+          </div>
+        </div>
+
+        <button type="submit" class="login-btn">LOGIN</button>
+      </form>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const passwordInput = document.getElementById("password");
+        const togglePassword = document.getElementById("togglePassword");
+        const loginHint = document.getElementById("login-hint");
+        const particlesContainer = document.getElementById("particles");
+
+        // Create floating particles
+        function createParticles() {
+          const particleCount = 50;
+
+          for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement("div");
+            particle.classList.add("particle");
+
+            // Random size
+            const size = Math.random() * 6 + 2;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+
+            // Random position
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${Math.random() * 100 + 100}%`;
+
+            // Random animation duration
+            const duration = Math.random() * 20 + 10;
+            particle.style.animationDuration = `${duration}s`;
+
+            // Random animation delay
+            const delay = Math.random() * 5;
+            particle.style.animationDelay = `${delay}s`;
+
+            // Random opacity
+            const opacity = Math.random() * 0.7 + 0.3;
+            particle.style.opacity = opacity;
+
+            particlesContainer.appendChild(particle);
+          }
+        }
+
+        // Toggle password visibility
+        togglePassword.addEventListener("click", function () {
+          const type =
+            passwordInput.getAttribute("type") === "password"
+              ? "text"
+              : "password";
+          passwordInput.setAttribute("type", type);
+          this.innerHTML =
+            type === "password"
+              ? '<i class="fas fa-eye"></i>'
+              : '<i class="fas fa-eye-slash"></i>';
+        });
+
+        // Simulate error for demo purposes
+        const urlParams = new URLSearchParams(window.location.search);
+        const errorParam = urlParams.get("error");
+
+        if (errorParam === "1") {
+          // Show error message
+          setTimeout(() => {
+            loginHint.classList.add("show");
+
+            // Clear password field
+            if (passwordInput) passwordInput.value = "";
+
+            // Remove error parameter from URL without reloading
+            if (window.history.replaceState) {
+              const url = new URL(window.location);
+              url.searchParams.delete("error");
+              window.history.replaceState({}, document.title, url);
+            }
+
+            // Hide error message after 3 seconds
+            setTimeout(function () {
+              loginHint.classList.remove("show");
+            }, 3000);
+          }, 1000);
+        }
+
+        // Create particles on load
+        createParticles();
+
+        // Add subtle hover effect to inputs
+        const inputs = document.querySelectorAll("input");
+        inputs.forEach((input) => {
+          input.addEventListener("mouseenter", () => {
+            input.style.borderColor = "rgba(79, 172, 254, 0.7)";
+          });
+
+          input.addEventListener("mouseleave", () => {
+            input.style.borderColor = "rgba(79, 172, 254, 0.2)";
+          });
+        });
+
+        // Add ripple effect to button
+        const loginBtn = document.querySelector(".login-btn");
+        loginBtn.addEventListener("click", function (e) {
+          const x = e.clientX - e.target.getBoundingClientRect().left;
+          const y = e.clientY - e.target.getBoundingClientRect().top;
+
+          const ripple = document.createElement("span");
+          ripple.classList.add("ripple");
+          ripple.style.left = `${x}px`;
+          ripple.style.top = `${y}px`;
+          this.appendChild(ripple);
+
+          setTimeout(() => {
+            ripple.remove();
+          }, 500);
+        });
+      });
+    </script>
+  </body>
+</html>
