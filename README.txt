@@ -1,10 +1,9 @@
 Leave Management System Setup
-============================
+
 
 1. Place this folder in your XAMPP 'htdocs' directory.
-2. Import 'leave_types.sql' and 'schema.sql' into your phpMyAdmin database (e.g., 'leave_management').
-3. Update database connection details in the PHP files (to be created).
-4. Access the system via http://localhost/leave_management_system/login.html
+2. Import  into your phpMyAdmin database ('leave_management' sql file).
+3. Access the system via http://localhost/LMSPROJ/login.html
 
 Pages:
 - login.html: Login page
@@ -12,4 +11,22 @@ Pages:
 - employee_dashboard.php: Employee dashboard (apply for leave)
 - admin_dashboard.php: Admin dashboard (view/approve leaves)
 
-You will need to implement the PHP backend for login, registration, leave application, and admin approval. 
+
+Accounts:
+
+// Admin
+
+- admin@company.com
+- admin123
+
+// users or employee
+
+- louis@gmail.com
+- 123
+
+- juan@gmail.com
+- 123
+
+ NOTE!!!! IMPORTANT 
+
+ - after you import the sql file , delete it (sqlfilee) in the local repository 
