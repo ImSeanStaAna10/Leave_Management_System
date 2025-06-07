@@ -412,7 +412,6 @@ if ($nextMonth > 12) {
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="logo">LeaveManager</div>
-        <!-- Search container -->
         <div class="search-container mb-3 px-3">
             <div class="input-group">
                 <input type="text" id="globalSearch" class="form-control" placeholder="Search employee...">
@@ -600,9 +599,6 @@ if ($nextMonth > 12) {
                     <button type="button" class="btn btn-primary" onclick="printSearchResults()">
                         <i class="bi bi-printer me-1"></i> Print
                     </button>
-                    <button type="button" class="btn btn-success" onclick="exportSearchResults()">
-                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export
-                    </button>
                 </div>
             </div>
         </div>
@@ -696,7 +692,9 @@ if ($nextMonth > 12) {
             hideLeaveDetails();
         });
 
-        // --- Search Functionality ---
+        // Initialize Bootstrap modals
+        const searchModal = new bootstrap.Modal(document.getElementById('searchResultsModal'));
+
         function performSearch() {
             const searchTerm = document.getElementById('globalSearch').value.trim();
             if (!searchTerm) return;
@@ -716,44 +714,41 @@ if ($nextMonth > 12) {
 
                     let html = '';
                     data.forEach(employee => {
-                        // Use the same structure as admin_dashboard.php search results
                         html += `
-                            <div class="card mb-3">
-                                <div class="card-header bg-primary text-white">
-                                    <h5 class="mb-0">${employee.name} (${employee.employee_id})</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <!-- Profile picture column -->
-                                        <div class="col-md-4 text-center">
+                            <div class="card mb-3 shadow-sm border-0">
+                                <div class="card-header bg-white py-3 border-bottom-0">
+                                    <div class="d-flex align-items-center">
                                             <img src="${employee.profile_picture && employee.profile_picture !== 'default-avatar.png' ? employee.profile_picture : 'uploads/default-avatar.png'}" 
-                                                 alt="Profile Picture" class="img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;">
-                                        </div>
-                                        <div class="col-md-8">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <h6>Employee Information</h6>
-                                                    <p><strong>Department:</strong> ${employee.department}</p>
-                                                    <p><strong>Job Title:</strong> ${employee.job_title}</p>
-                                                    <p><strong>Email:</strong> ${employee.email}</p>
-                                                    <p><strong>Contact:</strong> ${employee.contact_number}</p>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <h6>Leave Statistics</h6>
-                                                    <p><strong>Total Leaves:</strong> ${employee.total_leaves}</p>
-                                                    <p><strong>Approved:</strong> ${employee.approved_leaves}</p>
-                                                    <p><strong>Pending:</strong> ${employee.pending_leaves}</p>
-                                                    <p><strong>Rejected:</strong> ${employee.rejected_leaves}</p>
-                                                </div>
-                                            </div>
+                                             alt="Profile Picture" class="me-3 shadow-sm" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+                                        <div>
+                                            <h4 class="mb-0 text-primary">${employee.name} <small class="text-muted">(${employee.employee_id})</small></h4>
                                         </div>
                                     </div>
-                                    <div class="mt-3">
-                                        <h6>Recent Leave History</h6>
+                                </div>
+                                <div class="card-body pt-0">
+                                    <div class="row mb-3">
+                                                <div class="col-md-6">
+                                            <h6 class="text-secondary mb-2">Employee Information</h6>
+                                            <p class="mb-1"><strong>Department:</strong> ${employee.department}</p>
+                                            <p class="mb-1"><strong>Job Title:</strong> ${employee.job_title}</p>
+                                            <p class="mb-1"><strong>Email:</strong> ${employee.email}</p>
+                                            <p class="mb-1"><strong>Contact:</strong> ${employee.contact_number}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                            <h6 class="text-secondary mb-2">Leave Statistics</h6>
+                                            <p class="mb-1"><strong>Total Leaves:</strong> ${employee.total_leaves}</p>
+                                            <p class="mb-1"><strong>Approved:</strong> ${employee.approved_leaves}</p>
+                                            <p class="mb-1"><strong>Pending:</strong> ${employee.pending_leaves}</p>
+                                            <p class="mb-1"><strong>Rejected:</strong> ${employee.rejected_leaves}</p>
+                                                </div>
+                                            </div>
+                                    <hr class="my-3">
+                                    <div>
+                                        <h6 class="text-secondary mb-2">Recent Leave History</h6>
                                         <div class="table-responsive">
-                                            <table class="table table-sm">
+                                            <table class="table table-sm table-hover mb-0">
                                                 <thead>
-                                                    <tr>
+                                                    <tr class="table-light">
                                                         <th>Type</th>
                                                         <th>Start Date</th>
                                                         <th>End Date</th>
@@ -786,7 +781,6 @@ if ($nextMonth > 12) {
                 });
 
             // Show the modal
-            const searchModal = new bootstrap.Modal(document.getElementById('searchResultsModal'));
             searchModal.show();
         }
 
@@ -801,38 +795,27 @@ if ($nextMonth > 12) {
             const content = document.getElementById('searchResultsContent').innerHTML;
             const printWindow = window.open('', '_blank');
 
-            // Extract employee data from the displayed content if possible, or refetch if necessary.
-            // For a better print layout, it's often easier to regenerate the content with print-specific structure.
-            // Assuming data is available from a global variable or can be fetched again.
-            // For now, let's restructure the existing HTML content for better printing.
-
             let printContentHtml = '';
             document.querySelectorAll('#searchResultsContent .card').forEach(card => {
-                const name = card.querySelector('.card-header h5').textContent;
-                const profilePicUrl = card.querySelector('.card-body img') ? card.querySelector('.card-body img').src : 'uploads/default-avatar.png';
-                // Extracting innerHTML might bring unwanted styles; let's try to extract content more cleanly
-                const employeeInfoDiv = card.querySelector('.card-body .row > div:nth-child(2)');
-                const leaveStatsDiv = card.querySelector('.card-body .row > div:nth-child(3)');
-                const leaveHistoryDiv = card.querySelector('.card-body .mt-3');
+                const nameHeader = card.querySelector('.card-header h4').textContent;
+                const profilePicUrl = card.querySelector('.card-header img') ? card.querySelector('.card-header img').src : 'uploads/default-avatar.png';
+                const employeeInfoDiv = card.querySelector('.card-body > .row > div:nth-child(1)');
+                const leaveStatsDiv = card.querySelector('.card-body > .row > div:nth-child(2)');
+                const leaveHistoryDiv = card.querySelector('.card-body > div:nth-child(3)');
 
-                // Reconstruct the content with minimal and print-friendly HTML
-                let employeeInfoHtml = '<h5>Employee Information</h5>';
+                let employeeInfoHtml = '';
                 if (employeeInfoDiv) {
-                    employeeInfoDiv.querySelectorAll('p').forEach(p => {
-                        employeeInfoHtml += '<p>' + p.innerHTML + '</p>';
-                    });
+                    employeeInfoHtml += employeeInfoDiv.innerHTML.replace('<h6 class="text-secondary mb-2">Employee Information</h6>', '');
                 }
 
-                let leaveStatsHtml = '<h5>Leave Statistics</h5>';
+                let leaveStatsHtml = '';
                 if (leaveStatsDiv) {
-                    leaveStatsDiv.querySelectorAll('p').forEach(p => {
-                        leaveStatsHtml += '<p>' + p.innerHTML + '</p>';
-                    });
+                    leaveStatsHtml += leaveStatsDiv.innerHTML.replace('<h6 class="text-secondary mb-2">Leave Statistics</h6>', '');
                 }
 
-                let leaveHistoryHtml = '<h5>Recent Leave History</h5>';
-                 if (leaveHistoryDiv) { // Check if leave history exists
-                    leaveHistoryHtml += leaveHistoryDiv.innerHTML; // Assuming the table structure is print-friendly
+                let leaveHistoryHtml = '';
+                if (leaveHistoryDiv) {
+                    leaveHistoryHtml += leaveHistoryDiv.innerHTML.replace('<h6 class="text-secondary mb-2">Recent Leave History</h6>', '');
                  }
 
                 printContentHtml += `
@@ -840,20 +823,23 @@ if ($nextMonth > 12) {
                         <div class="d-flex align-items-center mb-3">
                             <img src="${profilePicUrl}" alt="Profile Picture" class="print-profile-pic me-3">
                             <div>
-                                <h4 class="mb-1">${name}</h4>
+                                <h4 class="mb-1">${nameHeader}</h4>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-6 print-info-block">
+                                <h6>Employee Information</h6>
                                 ${employeeInfoHtml}
                             </div>
                             <div class="col-6 print-info-block">
+                                <h6>Leave Statistics</h6>
                                 ${leaveStatsHtml}
                             </div>
                         </div>
 
                         <div class="mt-3 print-history-block">
+                            <h6>Recent Leave History</h6>
                             ${leaveHistoryHtml}
                         </div>
                     </div>
@@ -870,8 +856,8 @@ if ($nextMonth > 12) {
                             body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #333; }
                             .print-header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px; }
                             .print-header h1 { margin: 0; color: #333; }
-                            .print-employee-section { margin-bottom: 30px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; background-color: #fff; }
-                            .print-profile-pic { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; margin-bottom: 15px; }
+                            .print-employee-section { margin-bottom: 30px; padding: 20px; border: 1px solid #000; border-radius: 8px; background-color: #fff; }
+                            .print-profile-pic { width: 100px; height: 100px; object-fit: cover; border: 1px solid #000; border-radius: 8px; }
                             .print-info-block, .print-history-block { padding: 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 15px; }
                             .print-history-block table { width: 100%; border-collapse: collapse; margin-top: 10px; }
                             .print-history-block th, .print-history-block td { border: 1px solid #ddd; padding: 8px; text-align: left; }
@@ -905,18 +891,11 @@ if ($nextMonth > 12) {
                         </div>
 
                         ${printContentHtml}
-
                     </body>
                 </html>
             `);
             printWindow.document.close();
-            // Optional: call print dialog automatically
-            // printWindow.print();
-        }
-
-        function exportSearchResults() {
-            const searchTerm = document.getElementById('globalSearch').value.trim();
-            window.location.href = `export_search_results.php?term=${encodeURIComponent(searchTerm)}`;
+            printWindow.print();
         }
     </script>
 </body>

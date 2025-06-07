@@ -7,7 +7,6 @@ Leave Management System Setup
 
 Pages:
 - login.html: Login page
-- register.html: Register page
 - employee_dashboard.php: Employee dashboard (apply for leave)
 - admin_dashboard.php: Admin dashboard (view/approve leaves)
 
